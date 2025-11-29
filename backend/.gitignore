@@ -64,3 +64,4 @@ Thumbs.db
 # Optional: log files, temporary files
 logs/
 *.log
+/src/generated/prisma
