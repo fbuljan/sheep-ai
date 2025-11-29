@@ -222,3 +222,41 @@ Minimal Express API with in-memory auth for quick prototyping.
   - Errors: `400` if user not found, invalid user ID, or neither `notificationType` nor `notificationFrequency` is provided.
   - Note: This merges with existing notification preferences - you can update just one field without losing the other.
   - **Scheduler**: When both `notificationType` and `notificationFrequency` are set, a notification is automatically scheduled. For demo purposes, notifications are sent every 30 seconds regardless of the frequency setting. If `notificationType` is set to `none`, any scheduled notification is cancelled.
+
+### User Endpoints
+
+- `GET /users/:id` — Get user by ID.
+  - Input: `id` path parameter.
+  - Output: `200` with user object (no `passwordHash`):
+    ```json
+    {
+      "id": 1,
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "preferredWebsites": ["example.com", "news.com"],
+      "preferences": { "theme": "dark" },
+      "phoneNumber": "+123456789"
+    }
+    ```
+  - Errors: `404` if user not found.
+
+- `PUT /users/:id/preferred-websites` — Update user's preferred websites.
+  - Input: `id` path parameter and JSON body:
+    ```json
+    {
+      "preferredWebsites": ["site1.com", "site2.com", "site3.com"]
+    }
+    ```
+  - Output: `200` with updated user object.
+  - Errors: `400` if `preferredWebsites` is missing or not an array, `404` if user not found.
+
+- `PUT /users/:id/phone-number` — Update user's phone number.
+  - Input: `id` path parameter and JSON body:
+    ```json
+    {
+      "phoneNumber": "+123456789"
+    }
+    ```
+  - Output: `200` with updated user object.
+  - Errors: `400` if `phoneNumber` is missing, `404` if user not found.
+  - Note: Set `phoneNumber` to `null` to remove the phone number.
