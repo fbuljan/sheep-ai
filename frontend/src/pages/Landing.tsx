@@ -1,5 +1,6 @@
 import { Box, Flex, Heading, Text, Button } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
+import { Logo } from "../components/Logo";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -14,14 +15,7 @@ export default function Landing() {
     >
       {/* HEADER */}
       <Flex justify="space-between" align="center" mb={20}>
-        <Heading
-          fontSize="2xl"
-          fontWeight="700"
-          letterSpacing="wide"
-          cursor="pointer"
-        >
-          SIKUM
-        </Heading>
+        <Logo />
 
         <Button
           variant="ghost"

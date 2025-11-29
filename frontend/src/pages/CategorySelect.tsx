@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { fetchCategories } from "../api/categories";
 import { API_URL } from "../config/api";
+import { Logo } from "../components/Logo";
 
 export default function CategorySelect() {
   const navigate = useNavigate();
@@ -145,14 +146,7 @@ export default function CategorySelect() {
     >
       {/* HEADER */}
       <Flex w="100%" justify="space-between" align="center" mb={12}>
-        <Heading
-          fontWeight="700"
-          fontSize="2xl"
-          cursor="pointer"
-          onClick={() => navigate("/dashboard")}
-        >
-          SIKUM
-        </Heading>
+        <Logo navigateTo="/dashboard" />
 
         <Button variant="ghost" color="gray.600" onClick={() => navigate("/dashboard")}>
           Cancel
