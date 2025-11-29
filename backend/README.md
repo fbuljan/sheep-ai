@@ -56,3 +56,92 @@ Minimal Express API with in-memory auth for quick prototyping.
     }
     ```  
   - Errors: `401` for invalid credentials.
+
+### Scraper Endpoints
+
+- `GET /api/scraper/articles` — Get all scraped articles.
+  - Query parameters (optional):
+    - `limit` — Maximum number of articles to return (e.g., `?limit=10`)
+    - `source` — Filter by source (e.g., `?source=thehackernews`)
+  - Output: `200` with articles array:
+    ```json
+    {
+      "success": true,
+      "count": 10,
+      "articles": [
+        {
+          "id": 1,
+          "url": "https://example.com/article",
+          "scrapedAt": "2025-11-29T10:00:00.000Z",
+          "source": "thehackernews",
+          "data": {
+            "title": "Article Title",
+            "summary": "Article summary...",
+            "url": "https://example.com/article",
+            "imageUrl": "https://example.com/image.jpg",
+            "category": "Cyber Attack"
+          }
+        }
+      ]
+    }
+    ```
+
+- `GET /api/scraper/articles/:id` — Get a single article by ID.
+  - Output: `200` with article object, or `404` if not found.
+
+- `POST /api/scraper/scrape/initial` — Trigger initial scrape (last month of articles).
+  - Input: none.
+  - Output: `200` with scrape results:
+    ```json
+    {
+      "success": true,
+      "message": "Initial scrape completed. Saved 150 articles.",
+      "count": 150
+    }
+    ```
+
+- `POST /api/scraper/scrape/daily` — Trigger daily scrape (latest articles only).
+  - Input: none.
+  - Output: `200` with scrape results:
+    ```json
+    {
+      "success": true,
+      "message": "Daily scrape completed. Saved 20 articles.",
+      "count": 20
+    }
+    ```
+
+- `POST /api/scraper/scheduler/start` — Start the daily scraping scheduler.
+  - Input: none.
+  - Output: `200` with confirmation:
+    ```json
+    {
+      "success": true,
+      "message": "Daily scheduler started"
+    }
+    ```
+
+- `POST /api/scraper/scheduler/stop` — Stop the daily scraping scheduler.
+  - Input: none.
+  - Output: `200` with confirmation.
+
+- `GET /api/scraper/scheduler/status` — Get scheduler status.
+  - Output: `200` with status:
+    ```json
+    {
+      "success": true,
+      "isRunning": true,
+      "schedule": "Daily at midnight (0 0 * * *)"
+    }
+    ```
+
+- `DELETE /api/scraper/articles/cleanup/:days` — Delete articles older than specified days.
+  - Path parameter: `days` — Number of days to keep (e.g., `/cleanup/30`)
+  - Output: `200` with deletion count:
+    ```json
+    {
+      "success": true,
+      "message": "Deleted 50 articles older than 30 days",
+      "count": 50
+    }
+    ```
