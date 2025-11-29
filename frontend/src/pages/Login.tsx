@@ -9,10 +9,11 @@ import {
   Button,
   VStack,
   Link,
-  Spinner
+  Spinner,
+  Alert,
+  AlertIcon
 } from "@chakra-ui/react";
-
-import { loginUser } from "../api/auth";
+import axios from "axios";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -29,15 +30,28 @@ export default function Login() {
   const [error, setError] = useState("");
 
   async function handleLogin() {
+    setError("");
+
+    if (!email.trim() || !password.trim()) {
+      setError("Email and password are required.");
+      return;
+    }
+
     try {
-      setError("");
       setLoading(true);
 
-      const res = await loginUser({ email, password });
-      localStorage.setItem("token", res.token);
+      const res = await axios.post("http://localhost:4000/auth/login", {
+        email,
+        password
+      });
+
+      // Save token + user
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
       navigate("/dashboard");
     } catch {
-      setError("Invalid email or password");
+      setError("Invalid email or password.");
     } finally {
       setLoading(false);
     }
@@ -72,11 +86,18 @@ export default function Login() {
         </Heading>
 
         <Text color="gray.600" fontSize="md" mb={10}>
-          Continue where you left off in your personalized brief.
+          Continue where you left off.
         </Text>
 
         {loading && (
           <Spinner size="lg" color="black" mb={4} thickness="3px" />
+        )}
+
+        {error && (
+          <Alert status="error" mb={4} borderRadius="lg">
+            <AlertIcon />
+            {error}
+          </Alert>
         )}
 
         <VStack spacing={5}>
@@ -102,8 +123,6 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-
-          {error && <Text color="red.500">{error}</Text>}
 
           <Button
             w="full"

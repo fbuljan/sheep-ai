@@ -5,14 +5,25 @@ import {
   Text,
   Button,
   SimpleGrid,
+  IconButton,
+  Drawer,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerFooter,
+  useDisclosure,
 } from "@chakra-ui/react";
+import { HamburgerIcon } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [websites, setWebsites] = useState<string[]>([]);
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
+  // Load websites from localStorage
   useEffect(() => {
     const stored = JSON.parse(
       localStorage.getItem("websitePreferences") || "{}"
@@ -37,6 +48,12 @@ export default function Dashboard() {
     });
   }
 
+  function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+  }
+
   return (
     <Flex
       bg="white"
@@ -49,17 +66,16 @@ export default function Dashboard() {
       {/* HEADER */}
       <Flex w="100%" justify="space-between" align="center" mb={12}>
         <Heading fontWeight="600" fontSize="2xl">
-          🐑 Dashboard
+          Dashboard
         </Heading>
 
-        <Button
+        {/* Hamburger menu */}
+        <IconButton
+          aria-label="Menu"
+          icon={<HamburgerIcon boxSize={6} />}
           variant="ghost"
-          color="gray.600"
-          _hover={{ color: "black" }}
-          onClick={() => navigate("/settings")}
-        >
-          Settings
-        </Button>
+          onClick={onOpen}
+        />
       </Flex>
 
       {/* TITLE */}
@@ -121,6 +137,43 @@ export default function Dashboard() {
           ))}
         </SimpleGrid>
       )}
+
+      {/* SLIDE-IN MENU */}
+      <Drawer isOpen={isOpen} placement="right" onClose={onClose}>
+      <DrawerOverlay />
+      <DrawerContent maxW="200px"> 
+        <DrawerHeader fontSize="xl" fontWeight="600">
+          Menu
+        </DrawerHeader>
+
+        <DrawerBody display="flex" flexDirection="column" gap="20px">
+          <Button
+            variant="ghost"
+            w="full"
+            justifyContent="flex-start"
+            onClick={() => {
+              onClose();
+              navigate("/settings");
+            }}
+          >
+            Settings
+          </Button>
+
+          <Button
+            variant="ghost"
+            w="full"
+            justifyContent="flex-start"
+            onClick={logout}
+            color="red.500"
+          >
+            Logout
+          </Button>
+        </DrawerBody>
+
+        <DrawerFooter />
+      </DrawerContent>
+    </Drawer>
+
     </Flex>
   );
 }

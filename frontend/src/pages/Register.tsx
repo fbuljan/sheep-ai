@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -7,11 +7,13 @@ import {
   Text,
   Input,
   Button,
+  Select,
   VStack,
-  Link,
-  Spinner,
+  Alert,
+  AlertIcon,
+  Spinner
 } from "@chakra-ui/react";
-import { registerUser } from "../api/auth";
+import axios from "axios";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -19,38 +21,111 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  async function handleRegister() {
+  const [notificationType, setNotificationType] = useState("none");
+  const [frequency, setFrequency] = useState("daily");
+  const [phoneNumber, setPhoneNumber] = useState("");
+
+  const [types, setTypes] = useState<any[]>([]);
+  const [frequencies, setFrequencies] = useState<any[]>([]);
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Load available options from backend
+  useEffect(() => {
+    axios.get("http://localhost:4000/notifications/types")
+      .then(res => setTypes(res.data))
+      .catch(() => {}); 
+
+    axios.get("http://localhost:4000/notifications/frequencies")
+      .then(res => setFrequencies(res.data))
+      .catch(() => {});
+  }, []);
+
+  function validateFields() {
+    // RESET
     setError("");
 
-    if (name.trim().length < 3) {
-      setError("Name must be at least 3 characters");
-      return;
+    // NAME
+    if (!name.trim()) {
+      setError("Name is required.");
+      return false;
     }
-    if (!email.includes("@")) {
-      setError("Email is invalid");
-      return;
+
+    // EMAIL
+    if (!email.trim()) {
+      setError("Email is required.");
+      return false;
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return false;
+    }
+
+    // PASSWORD
+    if (!password.trim()) {
+      setError("Password is required.");
+      return false;
+    }
+
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
+      setError("Password must be at least 6 characters long.");
+      return false;
     }
+
+    // Phone validation
+    if ((notificationType === "whatsapp" || notificationType === "both")) {
+      if (!phoneNumber.trim()) {
+        setError("Phone number is required for WhatsApp notifications.");
+        return false;
+      }
+
+      const phoneRegex = /^\+?[0-9]{7,15}$/;
+      if (!phoneRegex.test(phoneNumber)) {
+        setError("Invalid phone number format. Use: +385912345678");
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  async function register() {
+    if (!validateFields()) return;
 
     try {
       setLoading(true);
 
-      await registerUser({
+      // Create user
+      const res = await axios.post("http://localhost:4000/auth/register", {
         name,
         email,
         password,
-        preferredWebsites: []
+        preferredWebsites: [],
+        phoneNumber: phoneNumber || "",
       });
+
+      const userId = res.data.id;
+
+      // Save notification preferences
+      await axios.put(`http://localhost:4000/notifications/preferences/${userId}`, {
+        notificationType,
+        notificationFrequency: notificationType === "none" ? null : frequency
+      });
+
+      // Save phone number
+      if (phoneNumber.trim()) {
+        await axios.put(`http://localhost:4000/auth/phone/${userId}`, {
+          phoneNumber,
+        });
+      }
 
       navigate("/login");
     } catch (err: any) {
-      setError(err.message || "Registration failed");
+      setError(err.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -58,93 +133,110 @@ export default function Register() {
 
   return (
     <Flex
-      bg="white"
       minH="100vh"
+      bg="white"
       direction="column"
+      px={{ base: 6, md: 16 }}
+      py={10}
       align="center"
-      justify="center"
-      px={6}
     >
-      <Flex
-        position="absolute"
-        top="30px"
-        left="30px"
-        fontSize="2xl"
-        fontWeight="bold"
-        cursor="pointer"
-        onClick={() => navigate("/")}
-      >
-        SheepAI
+      <Flex w="100%" justify="space-between" mb={12}>
+        <Heading fontSize="2xl">🐑 SheepAI</Heading>
+        <Button variant="ghost" onClick={() => navigate("/")}>Cancel</Button>
       </Flex>
 
-      <Box w="full" maxW="420px" textAlign="center">
-        <Heading mb={4} fontWeight="600">
-          Create your account
-        </Heading>
+      <Heading fontSize="3xl" mb={3}>Create your account</Heading>
 
-        <Text color="gray.600" fontSize="md" mb={10}>
-          Join and start building your personalized daily brief.
-        </Text>
-
-        {loading && (
-          <Spinner size="lg" color="black" mb={4} thickness="3px" />
-        )}
-
-        <VStack spacing={5}>
+      <VStack spacing={6} maxW="500px" w="100%" mt={8}>
+        
+        {/* NAME */}
+        <Box w="100%">
+          <Text mb={2}>Name</Text>
           <Input
-            placeholder="Full name"
-            bg="white"
-            border="2px solid #e5e5e5"
-            borderRadius="lg"
-            p={6}
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="Jane Doe"
           />
+        </Box>
 
+        {/* EMAIL */}
+        <Box w="100%">
+          <Text mb={2}>Email</Text>
           <Input
-            placeholder="Email"
-            bg="white"
-            border="2px solid #e5e5e5"
-            borderRadius="lg"
-            p={6}
+            type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="jane@example.com"
           />
+        </Box>
 
+        {/* PASSWORD */}
+        <Box w="100%">
+          <Text mb={2}>Password</Text>
           <Input
-            placeholder="Password"
             type="password"
-            bg="white"
-            border="2px solid #e5e5e5"
-            borderRadius="lg"
-            p={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
           />
+        </Box>
 
-          {error && <Text color="red.500">{error}</Text>}
-
-          <Button
-            w="full"
-            bg="black"
-            color="white"
-            py={6}
-            borderRadius="lg"
-            fontSize="md"
-            _hover={{ bg: "gray.800" }}
-            onClick={handleRegister}
+        {/* NOTIFICATION TYPE */}
+        <Box w="100%">
+          <Text mb={2}>Notification Type</Text>
+          <Select
+            value={notificationType}
+            onChange={(e) => setNotificationType(e.target.value)}
           >
-            Create account
-          </Button>
+            {types.map((t) => (
+              <option key={t.key} value={t.key}>{t.label}</option>
+            ))}
+          </Select>
+        </Box>
 
-          <Text fontSize="sm" color="gray.600">
-            Already have an account?{" "}
-            <Link color="blue.500" onClick={() => navigate("/login")}>
-              Sign in
-            </Link>
-          </Text>
-        </VStack>
-      </Box>
+        {/* FREQUENCY (only when notifications != none) */}
+        {notificationType !== "none" && (
+          <Box w="100%">
+            <Text mb={2}>Frequency</Text>
+            <Select
+              value={frequency}
+              onChange={(e) => setFrequency(e.target.value)}
+            >
+              {frequencies.map((f) => (
+                <option key={f.key} value={f.key}>{f.label}</option>
+              ))}
+            </Select>
+          </Box>
+        )}
+
+        {/* PHONE NUMBER (only for WhatsApp/Both) */}
+        {(notificationType === "whatsapp" || notificationType === "both") && (
+          <Box w="100%">
+            <Text mb={2}>Phone Number</Text>
+            <Input
+              placeholder="+385912345678"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+            />
+          </Box>
+        )}
+
+        {/* LOADING */}
+        {loading && <Spinner size="lg" thickness="4px" />}
+
+        {/* ERRORS */}
+        {error && (
+          <Alert status="error" borderRadius="lg">
+            <AlertIcon />
+            {error}
+          </Alert>
+        )}
+
+        {/* SUBMIT */}
+        <Button bg="black" color="white" w="100%" onClick={register}>
+          Create Account
+        </Button>
+      </VStack>
     </Flex>
   );
 }
