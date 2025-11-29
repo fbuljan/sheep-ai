@@ -64,7 +64,7 @@ export class ChatGptService {
       model: this.model,
       tools: [{ type: 'web_search_preview' }],
       instructions: systemPrompt,
-      input: `Please fetch and read the full article content from this URL: ${articleUrl}\n\nThen summarize it according to the instructions. Your output should be summary formatted with markdown.`,
+      input: `Please fetch and read the full article content from this URL: ${articleUrl}\n\nThen summarize it according to the instructions. Your output should be summary formatted with markdown. Include title/header.`,
     });
 
     const textOutput = response.output.find((item) => item.type === 'message');
