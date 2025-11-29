@@ -75,15 +75,11 @@ export default function Landing() {
 
         {/* SEARCH BAR */}
         <InputGroup
-          bg="white"
-          border="2px solid #ddd"
-          borderRadius="full"
-          px={4}
-          py={2}
           mt={12}
           maxW="600px"
+          size="lg"
         >
-          <InputLeftElement pointerEvents="none">
+          <InputLeftElement pointerEvents="none" h="full">
             <Icon as={FiSearch} color="gray.500" boxSize={5} />
           </InputLeftElement>
 
@@ -91,11 +87,18 @@ export default function Landing() {
             placeholder="Get your brief"
             borderRadius="full"
             fontSize="lg"
+            bg="white"
+            border="2px solid #ddd"
             _placeholder={{ color: "gray.500" }}
+            _hover={{ borderColor: "gray.400" }}
+            _focus={{ borderColor: "black", boxShadow: "none" }}
+            pl={12}
+            pr={12}
+            py={6}
           />
 
-          <InputRightElement>
-            <Icon as={FiMic} color="gray.500" boxSize={6} />
+          <InputRightElement h="full">
+            <Icon as={FiMic} color="gray.500" boxSize={6} cursor="pointer" />
           </InputRightElement>
         </InputGroup>
       </Flex>
