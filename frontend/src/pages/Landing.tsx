@@ -14,8 +14,8 @@ export default function Landing() {
       py={8}
     >
       {/* HEADER */}
-      <Flex justify="space-between" align="center" mb={20}>
-        <Logo />
+      <Flex justify="flex-end" align="center" mb={20} position="relative" zIndex={1}>
+        <Logo absolute />
 
         <Button
           variant="ghost"
