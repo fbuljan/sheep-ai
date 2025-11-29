@@ -7,6 +7,7 @@ import { schedulerService } from './services/schedulerService';
 import { chatGptRouter } from './routes/chatGptRoutes';
 import { notificationRouter } from './routes/notificationRoutes';
 import { userRouter } from './routes/userRoutes';
+import { categoryRouter } from './routes/categoryRoutes';
 
 dotenv.config();
 
@@ -28,6 +29,8 @@ app.use('/chatgpt', chatGptRouter);
 app.use('/notifications', notificationRouter);
 
 app.use('/users', userRouter);
+
+app.use('/categories', categoryRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

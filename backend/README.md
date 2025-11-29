@@ -260,3 +260,26 @@ Minimal Express API with in-memory auth for quick prototyping.
   - Output: `200` with updated user object.
   - Errors: `400` if `phoneNumber` is missing, `404` if user not found.
   - Note: Set `phoneNumber` to `null` to remove the phone number.
+
+### Category Endpoints
+
+- `GET /categories/:source` — Get categories for a specific source.
+  - Input: `source` path parameter (e.g., `thehackernews`).
+  - Output: `200` with categories and article mappings:
+    ```json
+    {
+      "success": true,
+      "categories": [
+        { "id": 1, "name": "Cybersecurity", "source": "thehackernews" },
+        { "id": 2, "name": "Data Breach", "source": "thehackernews" }
+      ],
+      "articleCategories": {
+        "1": ["Cybersecurity", "Data Breach"],
+        "2": ["Malware", "Ransomware"]
+      }
+    }
+    ```
+  - Behavior:
+    - If categories already exist for the source, returns them from the database.
+    - If no categories exist, generates them using OpenAI by analyzing all articles for that source, saves them to the database, and returns them with article-to-category mappings.
+  - Note: `articleCategories` maps article IDs to their assigned categories. This is only populated when categories are freshly generated.
