@@ -32,13 +32,13 @@ async function sendNotification(userId: number): Promise<void> {
 
   const { notificationType, notificationFrequency } = notification;
 
-  const message = `🐑 Sheep AI Update: Here's your ${notificationFrequency} digest of personalized news and insights!`;
+  const message = `🐑 SIKUM Update: Here's your ${notificationFrequency} digest of personalized news and insights!`;
 
   switch (notificationType) {
     case 'email':
       await sendNotificationEmail({
         to: user.email,
-        subject: `🐑 Your ${notificationFrequency} Sheep AI digest`,
+        subject: `🐑 Your ${notificationFrequency} SIKUM digest`,
         userName: user.name,
         frequency: notificationFrequency || 'daily',
       });
@@ -51,7 +51,7 @@ async function sendNotification(userId: number): Promise<void> {
     case 'both':
       await sendNotificationEmail({
         to: user.email,
-        subject: `🐑 Your ${notificationFrequency} Sheep AI digest`,
+        subject: `🐑 Your ${notificationFrequency} SIKUM digest`,
         userName: user.name,
         frequency: notificationFrequency || 'daily',
       });

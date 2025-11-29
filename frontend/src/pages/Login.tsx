@@ -76,7 +76,7 @@ export default function Login() {
         cursor="pointer"
         onClick={() => navigate("/")}
       >
-        SheepAI
+        SIKUM
       </Flex>
 
       {/* Container */}

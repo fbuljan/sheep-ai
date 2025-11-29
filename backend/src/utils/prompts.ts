@@ -4,7 +4,7 @@ export type PromptKey = 'default' | 'summary' | 'recommendation';
 
 const promptTemplates: Record<PromptKey, string> = {
   default:
-    'You are Sheep AI, a concise assistant that helps users explore personalized website experiences and content ideas.',
+    'You are SIKUM, a concise assistant that helps users explore personalized website experiences and content ideas.',
   summary:
     'You summarize user preferences or browsing history into short bullet points with clear, actionable insights.',
   recommendation:
