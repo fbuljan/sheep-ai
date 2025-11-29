@@ -81,4 +81,33 @@ export class ChatGptService {
       raw: response,
     };
   }
+
+  async convertMarkdownToHtml(markdown: string): Promise<string> {
+    const client = await this.getClient();
+
+    const response = await client.chat.completions.create({
+      model: this.model,
+      messages: [
+        {
+          role: 'system',
+          content: `You are a markdown to HTML converter. Convert the given markdown to clean, email-safe HTML.
+Use inline styles for formatting (no external CSS).
+Use these styles:
+- Headers: font-weight bold, appropriate font sizes
+- Paragraphs: margin-bottom 16px, line-height 1.6
+- Lists: proper list styling with padding
+- Bold/italic: appropriate font-weight/style
+- Links: color #667eea
+
+Return ONLY the HTML content, no explanation or markdown code blocks.`,
+        },
+        {
+          role: 'user',
+          content: markdown,
+        },
+      ],
+    });
+
+    return response.choices[0]?.message?.content ?? '';
+  }
 }

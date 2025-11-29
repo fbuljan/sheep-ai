@@ -1,4 +1,8 @@
 import nodemailer from 'nodemailer';
+import { UserService } from './userService';
+import { DisplayTypeService } from './displayTypeService';
+import { ChatGptService } from './chatGptService';
+import { displayTypes } from '../models/displayType';
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -15,10 +19,60 @@ interface EmailOptions {
   subject: string;
   userName: string;
   frequency: string;
+  userId: number;
+}
+
+interface ArticleData {
+  title?: string;
+  summary?: string;
+  url?: string;
+  imageUrl?: string;
 }
 
 export async function sendNotificationEmail(options: EmailOptions): Promise<void> {
-  const { to, subject, userName, frequency } = options;
+  const { to, subject, userName, frequency, userId } = options;
+
+  const userService = new UserService();
+  const displayTypeService = new DisplayTypeService();
+  const chatGptService = new ChatGptService();
+
+  // Get user's preferred websites
+  const user = await userService.getUserById(userId);
+  const preferredWebsites = user?.preferredWebsites || [];
+  const firstSource = preferredWebsites[0] || 'thehackernews';
+
+  // Get articles for user's preferred categories
+  const { articles } = await userService.getArticlesByPreferredCategories(userId, firstSource, 10);
+
+  // Get user's preferred display types
+  let userDisplayTypes = await displayTypeService.getUserDisplayPreferences(userId);
+  if (userDisplayTypes.length === 0) {
+    userDisplayTypes = displayTypes;
+  }
+
+  // Select random article and display type
+  const randomArticle = articles.length > 0 ? articles[Math.floor(Math.random() * articles.length)] : null;
+  const randomDisplayType = userDisplayTypes[Math.floor(Math.random() * userDisplayTypes.length)];
+
+  let articleSummaryHtml = '';
+  let articleTitle = '';
+  let articleUrl = '';
+
+  if (randomArticle && randomDisplayType) {
+    const articleData = randomArticle.data as ArticleData;
+    articleTitle = articleData.title || 'Untitled Article';
+    articleUrl = randomArticle.url;
+
+    try {
+      // Generate summary
+      const summaryResult = await chatGptService.generateArticleSummary(articleUrl, randomDisplayType);
+      // Convert markdown to HTML
+      articleSummaryHtml = await chatGptService.convertMarkdownToHtml(summaryResult.content);
+    } catch (error) {
+      console.error('[Email Service] Failed to generate article summary:', error);
+      articleSummaryHtml = `<p style="color: #666666; font-size: 14px; line-height: 1.6;">${articleData.summary || 'Check out this interesting article on our platform.'}</p>`;
+    }
+  }
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -55,7 +109,28 @@ export async function sendNotificationEmail(options: EmailOptions): Promise<void
                 Here's your <strong>${frequency}</strong> digest of personalized news and insights curated just for you by SIKUM.
               </p>
 
-              <!-- Feature Box -->
+              ${randomArticle ? `
+              <!-- Featured Article -->
+              <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 30px 0;">
+                <tr>
+                  <td style="background-color: #f8f9fa; border-radius: 8px; padding: 25px;">
+                    <h3 style="margin: 0 0 15px; color: #333333; font-size: 18px; font-weight: 600;">
+                      📰 Featured Article
+                    </h3>
+                    <h4 style="margin: 0 0 15px; color: #667eea; font-size: 16px; font-weight: 600;">
+                      ${articleTitle}
+                    </h4>
+                    <div style="color: #666666; font-size: 14px; line-height: 1.6;">
+                      ${articleSummaryHtml}
+                    </div>
+                    <a href="${articleUrl}" style="display: inline-block; margin-top: 15px; color: #667eea; text-decoration: none; font-weight: 600; font-size: 14px;">
+                      Read full article →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              ` : `
+              <!-- No Articles Available -->
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 30px 0;">
                 <tr>
                   <td style="background-color: #f8f9fa; border-radius: 8px; padding: 25px;">
@@ -63,18 +138,19 @@ export async function sendNotificationEmail(options: EmailOptions): Promise<void
                       📰 What's New Today
                     </h3>
                     <p style="margin: 0; color: #666666; font-size: 14px; line-height: 1.6;">
-                      Stay informed with the latest updates from your favorite sources. SIKUM has analyzed trending topics and curated content that matches your interests.
+                      Stay informed with the latest updates from your favorite sources. Visit your dashboard to explore personalized content.
                     </p>
                   </td>
                 </tr>
               </table>
+              `}
 
               <!-- CTA Button -->
               <table role="presentation" style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="text-align: center; padding: 20px 0;">
-                    <a href="#" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px; font-weight: 600;">
-                      View Your Dashboard
+                    <a href="https://sheep-ai.vercel.app/" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+                      View More Articles
                     </a>
                   </td>
                 </tr>
