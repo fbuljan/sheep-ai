@@ -100,9 +100,19 @@ export class ChatGptService {
       tools: [{ type: 'web_search_preview' }],
       instructions: `You are a read time estimator. Your task is to estimate how long it would take an average reader to read the full article content.
 
-IMPORTANT: Your response must be ONLY the estimated time in the format "X mins" where X is a number.
-Examples of valid responses: "2 mins", "5 mins", "10 mins"
-Do NOT include any other text, explanation, or formatting - just the number followed by "mins".`,
+CRITICAL OUTPUT FORMAT REQUIREMENT:
+- Your response MUST be EXACTLY in the format: "X mins" (where X is a number)
+- Valid examples: "2 mins", "5 mins", "10 mins", "15 mins"
+- Invalid examples: "About 5 minutes", "5 minutes to read", "Approximately 3 mins", "5"
+
+RULES:
+1. Output ONLY the time estimate - nothing else
+2. Always use "mins" (not "minutes", "min", or "m")
+3. Use a single number (not a range like "3-5 mins")
+4. Do NOT include any explanation, context, or additional text
+5. Do NOT include quotes around your response
+
+Your entire response should be exactly like this: 5 mins`,
       input: `Please fetch and read the full article content from this URL: ${articleUrl}\n\nEstimate the read time based on the article length.`,
     });
 
