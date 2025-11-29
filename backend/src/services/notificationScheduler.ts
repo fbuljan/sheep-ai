@@ -1,5 +1,6 @@
 import { prisma } from '../prisma';
 import { NotificationPreferences } from '../models/notification';
+import { sendNotificationEmail } from './emailService';
 
 interface ScheduledNotification {
   userId: number;
@@ -33,19 +34,28 @@ async function sendNotification(userId: number): Promise<void> {
 
   const message = `🐑 Sheep AI Update: Here's your ${notificationFrequency} digest of personalized news and insights!`;
 
-  // TODO send notifications via email/WhatsApp APIs
   switch (notificationType) {
     case 'email':
-      console.log(`[Email Notification] To: ${user.email}`);
-      console.log(`[Email Notification] Message: ${message}`);
+      await sendNotificationEmail({
+        to: user.email,
+        subject: `🐑 Your ${notificationFrequency} Sheep AI digest`,
+        userName: user.name,
+        frequency: notificationFrequency || 'daily',
+      });
       break;
     case 'whatsapp':
+      // TODO: Implement WhatsApp API
       console.log(`[WhatsApp Notification] To: ${user.phoneNumber || 'No phone number'}`);
       console.log(`[WhatsApp Notification] Message: ${message}`);
       break;
     case 'both':
-      console.log(`[Email Notification] To: ${user.email}`);
-      console.log(`[Email Notification] Message: ${message}`);
+      await sendNotificationEmail({
+        to: user.email,
+        subject: `🐑 Your ${notificationFrequency} Sheep AI digest`,
+        userName: user.name,
+        frequency: notificationFrequency || 'daily',
+      });
+      // TODO: Implement WhatsApp API
       console.log(`[WhatsApp Notification] To: ${user.phoneNumber || 'No phone number'}`);
       console.log(`[WhatsApp Notification] Message: ${message}`);
       break;

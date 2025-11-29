@@ -197,7 +197,7 @@ Minimal Express API with in-memory auth for quick prototyping.
   - Input: `userId` path parameter.
   - Output: `200` with notification preferences or `null` if not set:
     ```json
-    {
+    { 
       "notificationType": "email",
       "notificationFrequency": "daily"
     }

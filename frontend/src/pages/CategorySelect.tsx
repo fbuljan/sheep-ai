@@ -5,8 +5,9 @@ import {
   Text,
   Button,
   SimpleGrid,
+  Input,
 } from "@chakra-ui/react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 const ALL_CATEGORIES = [
@@ -25,10 +26,33 @@ const ALL_CATEGORIES = [
 
 export default function CategorySelect() {
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const website = location.state?.website;
+  const [website, setWebsite] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [step, setStep] = useState(1); // 1 = enter website, 2 = categories
+  const [error, setError] = useState("");
+
+  function validateWebsite() {
+    setError("");
+
+    if (!website.trim()) {
+      setError("Please enter a website.");
+      return;
+    }
+
+    const clean = website
+      .replace("https://", "")
+      .replace("http://", "")
+      .split("/")[0];
+
+    if (!clean.includes(".")) {
+      setError("Please enter a valid domain (e.g. example.com).");
+      return;
+    }
+
+    setWebsite(clean);
+    setStep(2);
+  }
 
   function toggle(cat: string) {
     if (selected.includes(cat)) {
@@ -39,7 +63,7 @@ export default function CategorySelect() {
   }
 
   function next() {
-    navigate("/website-preferences", {
+    navigate("/swipe", {
       state: {
         website,
         categories: selected,
@@ -64,7 +88,7 @@ export default function CategorySelect() {
           cursor="pointer"
           onClick={() => navigate("/dashboard")}
         >
-          🐑 SheepAI
+          SheepAI
         </Heading>
 
         <Button
@@ -76,59 +100,98 @@ export default function CategorySelect() {
         </Button>
       </Flex>
 
-      <Heading fontSize="3xl" mb={4}>
-        What topics interest you?
-      </Heading>
-      <Text color="gray.600" mb={10} maxW="600px" textAlign="center">
-        Select the categories you care about the most.  
-        These will personalize upcoming content.
-      </Text>
+      {/* STEP 1 — ENTER WEBSITE */}
+      {step === 1 && (
+        <>
+          <Heading fontSize="3xl" mb={4}>
+            Add a Website
+          </Heading>
+          <Text color="gray.600" mb={8} textAlign="center" maxW="600px">
+            Enter the website you want to train your personal brief on.
+          </Text>
 
-      {/* GRID */}
-      <SimpleGrid
-        columns={{ base: 2, md: 3, lg: 4 }}
-        spacing={4}
-        maxW="800px"
-        mb={12}
-      >
-        {ALL_CATEGORIES.map((cat) => {
-          const active = selected.includes(cat);
-          return (
-            <Box
-              key={cat}
-              border="2px solid"
-              borderColor={active ? "black" : "#E5E5E5"}
-              bg={active ? "black" : "white"}
-              color={active ? "white" : "black"}
-              borderRadius="full"
-              px={5}
-              py={3}
-              textAlign="center"
-              cursor="pointer"
-              onClick={() => toggle(cat)}
-              transition="0.2s"
-              _hover={{
-                transform: "translateY(-2px)",
-                boxShadow: "0 4px 8px rgba(0,0,0,0.06)",
-              }}
-            >
-              {cat}
-            </Box>
-          );
-        })}
-      </SimpleGrid>
+          <Box w="100%" maxW="500px" mb={4}>
+            <Input
+              placeholder="example.com"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              border="2px solid #E5E5E5"
+              borderRadius="lg"
+              p={6}
+            />
+          </Box>
 
-      <Button
-        bg="black"
-        color="white"
-        px={10}
-        py={6}
-        borderRadius="lg"
-        onClick={next}
-        disabled={selected.length === 0}
-      >
-        Continue
-      </Button>
+          {error && <Text color="red.500" mb={4}>{error}</Text>}
+
+          <Button
+            bg="black"
+            color="white"
+            px={10}
+            py={6}
+            borderRadius="lg"
+            onClick={validateWebsite}
+          >
+            Continue
+          </Button>
+        </>
+      )}
+
+      {/* STEP 2 — CATEGORY SELECTION */}
+      {step === 2 && (
+        <>
+          <Heading fontSize="3xl" mb={4}>
+            What topics interest you?
+          </Heading>
+          <Text color="gray.600" mb={10} textAlign="center" maxW="600px">
+            These will be used to personalize your content from {website}.
+          </Text>
+
+          <SimpleGrid
+            columns={{ base: 2, md: 3, lg: 4 }}
+            spacing={4}
+            maxW="800px"
+            mb={12}
+          >
+            {ALL_CATEGORIES.map((cat) => {
+              const active = selected.includes(cat);
+              return (
+                <Box
+                  key={cat}
+                  border="2px solid"
+                  borderColor={active ? "black" : "#E5E5E5"}
+                  bg={active ? "black" : "white"}
+                  color={active ? "white" : "black"}
+                  borderRadius="full"
+                  px={5}
+                  py={3}
+                  textAlign="center"
+                  cursor="pointer"
+                  onClick={() => toggle(cat)}
+                  transition="0.2s"
+                  _hover={{
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 4px 8px rgba(0,0,0,0.06)",
+                  }}
+                >
+                  {cat}
+                </Box>
+              );
+            })}
+          </SimpleGrid>
+
+          <Button
+            bg="black"
+            color="white"
+            px={10}
+            py={6}
+            borderRadius="lg"
+            onClick={next}
+            disabled={selected.length === 0}
+          >
+            Continue to Swipe
+          </Button>
+        </>
+      )}
     </Flex>
   );
 }

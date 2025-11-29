@@ -1,157 +1,224 @@
 import {
-  Box,
   Flex,
   Heading,
   Text,
   Button,
-  Input,
   Select,
+  VStack,
   Alert,
   AlertIcon,
-  VStack,
+  Box,
+  Input,
+  Spinner
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function Settings() {
   const navigate = useNavigate();
 
-  // Load saved settings from localStorage (MVP)
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [notifyMethod, setNotifyMethod] = useState("none");
+  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const userId = storedUser?.id;
+
+  const [loading, setLoading] = useState(true);
+
+  const [types, setTypes] = useState([]);
+  const [frequencies, setFrequencies] = useState([]);
+
+  const [notificationType, setNotificationType] = useState("none");
   const [frequency, setFrequency] = useState("daily");
+  const [phoneNumber, setPhoneNumber] = useState("");
+
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const saved = localStorage.getItem("userSettings");
-    if (saved) {
-      const data = JSON.parse(saved);
-      setName(data.name || "");
-      setEmail(data.email || "");
-      setPhone(data.phone || "");
-      setNotifyMethod(data.notifyMethod || "none");
-      setFrequency(data.frequency || "daily");
+    async function load() {
+      try {
+        const [typesRes, freqRes, prefRes] = await Promise.all([
+          axios.get("http://localhost:4000/notifications/types"),
+          axios.get("http://localhost:4000/notifications/frequencies"),
+          axios.get(`http://localhost:4000/notifications/preferences/${userId}`)
+        ]);
+
+        setTypes(typesRes.data);
+        setFrequencies(freqRes.data);
+
+        if (prefRes.data) {
+          setNotificationType(prefRes.data.notificationType);
+          if (prefRes.data.notificationFrequency) {
+            setFrequency(prefRes.data.notificationFrequency);
+          }
+        }
+
+        if (storedUser?.phoneNumber) {
+          setPhoneNumber(storedUser.phoneNumber);
+        }
+      } catch {
+        setError("Failed to load settings.");
+      } finally {
+        setLoading(false);
+      }
     }
+
+    load();
   }, []);
 
-  function saveSettings() {
-    const data = {
-      name,
-      email,
-      phone,
-      notifyMethod,
-      frequency,
-    };
-    localStorage.setItem("userSettings", JSON.stringify(data));
-    navigate("/dashboard");
+  async function save() {
+    setSuccess("");
+    setError("");
+
+    // VALIDATE PHONE
+    if (notificationType === "whatsapp" || notificationType === "both") {
+      if (!phoneNumber.trim()) {
+        setError("Phone number is required for WhatsApp notifications.");
+        return;
+      }
+
+      const phoneRegex = /^\+?[0-9]{7,15}$/;
+
+      if (!phoneRegex.test(phoneNumber)) {
+        setError("Invalid phone number format. Use: +385912345678");
+        return;
+      }
+    }
+
+    try {
+      // Save notification preferences
+      await axios.put(
+        `http://localhost:4000/notifications/preferences/${userId}`,
+        {
+          notificationType,
+          notificationFrequency:
+            notificationType === "none" ? null : frequency,
+        }
+      );
+
+      // Save phone number
+      await axios.put(
+        `http://localhost:4000/auth/phone/${userId}`,
+        { phoneNumber }
+      );
+
+      // Update localStorage
+      const newUser = { ...storedUser, phoneNumber };
+      localStorage.setItem("user", JSON.stringify(newUser));
+
+      setSuccess("Settings updated!");
+    } catch {
+      setError("Failed to save changes.");
+    }
   }
 
-  const needsPhone =
-    (notifyMethod === "whatsapp" || notifyMethod === "both") &&
-    phone.trim() === "";
+  if (loading) {
+    return (
+      <Flex minH="100vh" align="center" justify="center">
+        <Spinner size="xl" color="black" />
+      </Flex>
+    );
+  }
 
   return (
     <Flex
-      bg="white"
       minH="100vh"
+      bg="white"
       direction="column"
       px={{ base: 6, md: 16 }}
       py={10}
       align="center"
     >
       {/* HEADER */}
-      <Flex
-        w="100%"
-        justify="space-between"
-        align="center"
-        mb={12}
-      >
-        <Heading
-          fontWeight="600"
-          fontSize="2xl"
-          cursor="pointer"
-          onClick={() => navigate("/dashboard")}
-        >
-          SheepAI
-        </Heading>
-
-        <Button
-          variant="ghost"
-          fontSize="sm"
-          color="gray.600"
-          _hover={{ color: "black" }}
-          onClick={() => navigate("/dashboard")}
-        >
+      <Flex w="100%" justify="space-between" mb={10}>
+        <Heading fontSize="2xl">🐑 SheepAI</Heading>
+        <Button variant="ghost" onClick={() => navigate("/dashboard")}>
           Back
         </Button>
       </Flex>
 
-      <Heading fontSize="3xl" mb={3}>
+      <Heading fontSize="3xl" mb={6}>
         Settings
       </Heading>
 
-      <Text color="gray.600" mb={12}>
-        Manage your notifications, profile, and preferences.
-      </Text>
-
-      <VStack spacing={6} w="100%" maxW="500px">
-        {/* NAME */}
-        <Box w="100%">
-          <Text mb={2} fontWeight="500">
-            Name
-          </Text>
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            border="2px solid #E5E5E5"
-            borderRadius="lg"
-            p={6}
-          />
-        </Box>
+      <VStack w="100%" maxW="500px" spacing={6}>
 
         {/* EMAIL */}
         <Box w="100%">
-          <Text mb={2} fontWeight="500">
-            Email
-          </Text>
+          <Text fontWeight="bold">Email</Text>
+          <Input value={storedUser.email} isDisabled bg="gray.100" />
+        </Box>
+
+        {/* NAME */}
+        <Box w="100%">
+          <Text fontWeight="bold">Name</Text>
+          <Input value={storedUser.name} isDisabled bg="gray.100" />
+        </Box>
+
+        {/* PHONE NUMBER */}
+        <Box w="100%">
+          <Text mb={2}>Phone Number</Text>
           <Input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            border="2px solid #E5E5E5"
-            borderRadius="lg"
-            p={6}
+            placeholder="+385912345678"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
           />
         </Box>
 
-        {/* PHONE */}
+        {/* NOTIFICATION TYPE */}
         <Box w="100%">
-          <Text mb={2} fontWeight="500">
-            Phone Number (for WhatsApp)
-          </Text>
-          <Input
-            placeholder="+385..."
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            border="2px solid #E5E5E5"
-            borderRadius="lg"
-            p={6}
-          />
+          <Text mb={2}>Notification Type</Text>
+          <Select
+            value={notificationType}
+            onChange={(e) => setNotificationType(e.target.value)}
+          >
+            {types.map((t: any) => {
+              const isPhoneChannel = t.key === "whatsapp" || t.key === "both";
+
+              return (
+                <option
+                  key={t.key}
+                  value={t.key}
+                  disabled={isPhoneChannel && !phoneNumber}
+                >
+                  {t.label}
+                </option>
+              );
+            })}
+          </Select>
         </Box>
-        
-        {/* SAVE */}
-        <Button
-          bg="black"
-          color="white"
-          px={10}
-          py={6}
-          borderRadius="lg"
-          fontSize="md"
-          _hover={{ bg: "gray.800" }}
-          onClick={saveSettings}
-          w="100%"
-          mt={6}
-        >
+
+        {/* FREQUENCY */}
+        {notificationType !== "none" && (
+          <Box w="100%">
+            <Text mb={2}>Frequency</Text>
+            <Select
+              value={frequency}
+              onChange={(e) => setFrequency(e.target.value)}
+            >
+              {frequencies.map((f: any) => (
+                <option key={f.key} value={f.key}>
+                  {f.label}
+                </option>
+              ))}
+            </Select>
+          </Box>
+        )}
+
+        {success && (
+          <Alert status="success" borderRadius="lg">
+            <AlertIcon />
+            {success}
+          </Alert>
+        )}
+
+        {error && (
+          <Alert status="error" borderRadius="lg">
+            <AlertIcon />
+            {error}
+          </Alert>
+        )}
+
+        <Button bg="black" color="white" w="100%" onClick={save}>
           Save Changes
         </Button>
       </VStack>
