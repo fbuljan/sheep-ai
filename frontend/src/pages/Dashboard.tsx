@@ -1,57 +1,40 @@
-import { useState } from "react";
 import {
   Box,
   Flex,
   Heading,
   Text,
   Button,
-  VStack,
-  Input,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  useDisclosure,
   SimpleGrid,
-  useToast,
-  Link,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const toast = useToast();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-
   const [websites, setWebsites] = useState<string[]>([]);
-  const [newWebsite, setNewWebsite] = useState("");
 
-  function handleLogout() {
-    localStorage.removeItem("token");
-    navigate("/login");
-  }
+  useEffect(() => {
+    const stored = JSON.parse(
+      localStorage.getItem("websitePreferences") || "{}"
+    );
+    setWebsites(Object.keys(stored));
+  }, []);
 
   function addWebsite() {
-    if (!newWebsite.trim()) return;
+    navigate("/categories", { state: { website: "" } });
+  }
 
-    setWebsites([...websites, newWebsite.trim()]);
-    toast({
-      title: "Website added",
-      description: `${newWebsite} added to your sources.`,
-      status: "success",
-      duration: 2000,
-    });
-
-    onClose();
+  function openWebsite(domain: string) {
+    const prefs = JSON.parse(
+      localStorage.getItem("websitePreferences") || "{}"
+    );
 
     navigate("/swipe", {
-      state: { website: newWebsite.trim() },
+      state: {
+        website: domain,
+        categories: prefs[domain]?.categories || [],
+      },
     });
-
-    setNewWebsite("");
   }
 
   return (
@@ -61,149 +44,83 @@ export default function Dashboard() {
       direction="column"
       px={{ base: 6, md: 16 }}
       py={10}
+      align="center"
     >
       {/* HEADER */}
-      <Flex justify="space-between" align="center" mb={12}>
+      <Flex w="100%" justify="space-between" align="center" mb={12}>
         <Heading fontWeight="600" fontSize="2xl">
-          Dashboard
+          🐑 Dashboard
         </Heading>
 
         <Button
           variant="ghost"
-          fontSize="sm"
           color="gray.600"
           _hover={{ color: "black" }}
-          onClick={handleLogout}
-          px={2}
+          onClick={() => navigate("/settings")}
         >
-          Log out
+          Settings
         </Button>
       </Flex>
 
-      {/* INTRO */}
-      <Box mb={10}>
-        <Heading fontSize="3xl" fontWeight="700" mb={2}>
-          Your Personalized Sources
-        </Heading>
-        <Text color="gray.600" maxW="600px" fontSize="lg">
-          Add your cybersecurity or news sources. We'll prepare your daily brief automatically.
-        </Text>
-      </Box>
+      {/* TITLE */}
+      <Heading fontSize="3xl" mb={3}>
+        Your Websites
+      </Heading>
 
-      {/* EMPTY STATE */}
-      {websites.length === 0 && (
-        <Flex
-          direction="column"
-          align="center"
-          justify="center"
-          py={20}
-          border="2px dashed #E5E5E5"
-          borderRadius="lg"
-          mb={12}
-        >
-          <Text fontSize="lg" color="gray.600" mb={4}>
-            You haven’t added any websites yet.
-          </Text>
+      <Text color="gray.600" mb={10} textAlign="center">
+        Click a website to explore your personalized brief.
+      </Text>
 
-          <Button
-            bg="black"
-            color="white"
-            px={8}
-            py={6}
-            borderRadius="lg"
-            onClick={onOpen}
-            _hover={{ bg: "gray.800" }}
-          >
-            + Add your first website
-          </Button>
-        </Flex>
-      )}
+      {/* ADD BUTTON */}
+      <Button
+        bg="black"
+        color="white"
+        px={8}
+        py={5}
+        borderRadius="lg"
+        mb={10}
+        _hover={{ bg: "gray.800" }}
+        onClick={addWebsite}
+      >
+        + Add New Website
+      </Button>
 
       {/* WEBSITE GRID */}
-      {websites.length > 0 && (
-        <>
-          <SimpleGrid columns={{ base: 2, md: 3, lg: 4 }} spacing={6} mb={16}>
-            {websites.map((site, idx) => (
-              <Box
-                key={idx}
-                borderRadius="lg"
-                border="1px solid #E5E5E5"
-                p={4}
-                textAlign="center"
-                cursor="pointer"
-                transition="0.2s"
-                bg="white"
-                _hover={{
-                  boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
-                  transform: "translateY(-2px)",
-                }}
-                onClick={() =>
-                  navigate("/swipe", { state: { website: site } })
-                }
-              >
-                <Heading size="sm" mb={1}>
-                  {site}
-                </Heading>
-                <Text color="gray.500" fontSize="xs">
-                  Tap to refine
-                </Text>
-              </Box>
-            ))}
-          </SimpleGrid>
-
-          {/* Add button only when user ALREADY has sites */}
-          <Flex justify="center" mt={16}>
-            <Button
-              bg="black"
-              color="white"
-              px={8}
-              py={6}
+      {websites.length === 0 ? (
+        <Text color="gray.500" fontSize="lg" mt={10}>
+          You haven't added any websites yet.
+        </Text>
+      ) : (
+        <SimpleGrid
+          columns={{ base: 1, md: 2, lg: 3 }}
+          spacing={8}
+          w="100%"
+          maxW="1000px"
+        >
+          {websites.map((domain) => (
+            <Box
+              key={domain}
+              border="1px solid #E5E5E5"
               borderRadius="lg"
-              onClick={onOpen}
-              _hover={{ bg: "gray.800" }}
+              p={8}
+              bg="white"
+              cursor="pointer"
+              transition="0.2s"
+              textAlign="center"
+              fontWeight="600"
+              fontSize="lg"
+              boxShadow="0 4px 8px rgba(0,0,0,0.05)"
+              _hover={{
+                transform: "translateY(-4px)",
+                boxShadow: "0 6px 12px rgba(0,0,0,0.08)",
+              }}
+              onClick={() => openWebsite(domain)}
             >
-              + Add website
-            </Button>
-          </Flex>
-        </>
+              {domain}
+            </Box>
+          ))}
+        </SimpleGrid>
       )}
-
-      {/* MODAL */}
-      <Modal isOpen={isOpen} onClose={onClose} isCentered>
-        <ModalOverlay />
-        <ModalContent borderRadius="lg" p={2}>
-          <ModalHeader>Add a website</ModalHeader>
-          <ModalCloseButton />
-
-          <ModalBody>
-            <Input
-              placeholder="example.com"
-              value={newWebsite}
-              onChange={(e) => setNewWebsite(e.target.value)}
-              borderRadius="lg"
-              border="2px solid #E5E5E5"
-              p={6}
-            />
-          </ModalBody>
-
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onClose}>
-              Cancel
-            </Button>
-
-            <Button
-              bg="black"
-              color="white"
-              borderRadius="lg"
-              px={6}
-              _hover={{ bg: "gray.900" }}
-              onClick={addWebsite}
-            >
-              Add
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </Flex>
   );
 }

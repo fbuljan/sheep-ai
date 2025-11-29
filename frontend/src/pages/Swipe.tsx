@@ -95,7 +95,7 @@ export default function Swipe() {
           cursor="pointer"
           onClick={() => navigate("/dashboard")}
         >
-          🐑 SheepAI
+          SheepAI
         </Heading>
 
         <Button
@@ -129,7 +129,7 @@ export default function Swipe() {
           value={progressValue}
           size="sm"
           borderRadius="full"
-          bg="gray.200"
+          bg="#A7F3D0"
           colorScheme="blackAlpha"
         />
 
