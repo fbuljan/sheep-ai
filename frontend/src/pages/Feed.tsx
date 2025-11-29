@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import { Box, Text, Spinner, Flex, IconButton, Badge } from "@chakra-ui/react";
-import { useLocation } from "react-router-dom";
+import { Box, Text, Spinner, Flex, IconButton, Badge, Tag, Wrap, WrapItem } from "@chakra-ui/react";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_URL } from "../config/api";
 import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDownIcon, ChevronUpIcon, ExternalLinkIcon } from "@chakra-ui/icons";
+import { ArrowBackIcon, ChevronDownIcon, ChevronUpIcon, ExternalLinkIcon, TimeIcon } from "@chakra-ui/icons";
 
 const MotionBox = motion(Box);
 
 export default function Feed() {
   const location = useLocation();
+  const navigate = useNavigate();
   const source = location.state?.website; // passed from dashboard
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -22,6 +23,7 @@ export default function Feed() {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [generatedContent, setGeneratedContent] = useState<Record<number, string>>({});
+  const [readTimes, setReadTimes] = useState<Record<number, string>>({});
   const [generating, setGenerating] = useState<Set<number>>(new Set());
   const [prefetchProgress, setPrefetchProgress] = useState({ done: 0, total: 0 });
 
@@ -48,6 +50,9 @@ export default function Feed() {
         console.log("Raw:", artRes.data);
         console.log("Count:", artRes.data?.articles?.length);
         console.log("First article:", artRes.data?.articles?.[0]);
+        console.log("First article data keys:", Object.keys(artRes.data?.articles?.[0]?.data || {}));
+        console.log("First article categories:", artRes.data?.articles?.[0]?.data?.categories);
+        console.log("First article full data:", artRes.data?.articles?.[0]?.data);
 
         setArticles(artRes.data.articles || []);
       } catch (err) {
@@ -114,6 +119,12 @@ export default function Feed() {
         ...prev,
         [article.id]: res.data.summary || res.data.content || res.data,
       }));
+      if (res.data.estimatedReadTime) {
+        setReadTimes((prev) => ({
+          ...prev,
+          [article.id]: res.data.estimatedReadTime,
+        }));
+      }
       setPrefetchProgress((prev) => ({ ...prev, done: prev.done + 1 }));
     } catch (err) {
       console.error(`ERROR GENERATING SUMMARY for ${article.id}:`, err);
@@ -185,8 +196,14 @@ export default function Feed() {
   return (
     <Box p={8}>
       <Flex align="center" gap={4} mb={6}>
+        <IconButton
+          aria-label="Go back"
+          icon={<ArrowBackIcon />}
+          variant="ghost"
+          onClick={() => navigate(-1)}
+        />
         <Text fontSize="2xl" fontWeight="bold">
-          Feed — {source}
+          Feed of {source}
         </Text>
         {prefetchProgress.total > 0 && prefetchProgress.done < prefetchProgress.total && (
           <Flex align="center" gap={2}>
@@ -209,6 +226,7 @@ export default function Feed() {
         const isExpanded = expandedId === a.id;
         const isGenerating = generating.has(a.id);
         const content = generatedContent[a.id];
+        const readTime = readTimes[a.id];
 
         return (
           <Box
@@ -253,10 +271,36 @@ export default function Feed() {
                   />
                 </Flex>
               </Box>
-              <Badge colorScheme={isExpanded ? "blue" : "gray"} ml={2}>
-                {isExpanded ? <ChevronUpIcon boxSize={4} /> : <ChevronDownIcon boxSize={4} />}
-              </Badge>
+              <Flex align="center" gap={2}>
+                {readTime && (
+                  <Badge colorScheme="purple" display="flex" alignItems="center" gap={1}>
+                    <TimeIcon boxSize={3} />
+                    {readTime}
+                  </Badge>
+                )}
+                <Badge colorScheme={isExpanded ? "blue" : "gray"}>
+                  {isExpanded ? <ChevronUpIcon boxSize={4} /> : <ChevronDownIcon boxSize={4} />}
+                </Badge>
+              </Flex>
             </Flex>
+
+            {/* Categories */}
+            {a.data.categories && a.data.categories.length > 0 && (
+              <Wrap mt={3} spacing={2}>
+                {a.data.categories.map((cat: string, idx: number) => (
+                  <WrapItem key={idx}>
+                    <Tag
+                      size="sm"
+                      borderRadius="full"
+                      variant="subtle"
+                      colorScheme="teal"
+                    >
+                      {cat}
+                    </Tag>
+                  </WrapItem>
+                ))}
+              </Wrap>
+            )}
 
             {/* Preview (always visible) */}
             <Box mt={3} color="gray.600" fontSize="sm">
