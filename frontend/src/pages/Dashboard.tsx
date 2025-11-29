@@ -17,23 +17,21 @@ import {
   useDisclosure,
   SimpleGrid,
   useToast,
+  Link,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const toast = useToast();
-
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // locally simulate websites (for now)
   const [websites, setWebsites] = useState<string[]>([]);
-
   const [newWebsite, setNewWebsite] = useState("");
 
   function handleLogout() {
     localStorage.removeItem("token");
-    navigate("/");
+    navigate("/login");
   }
 
   function addWebsite() {
@@ -45,12 +43,10 @@ export default function Dashboard() {
       description: `${newWebsite} added to your sources.`,
       status: "success",
       duration: 2000,
-      isClosable: true,
     });
 
     onClose();
 
-    // move user to swipe screen for this new site
     navigate("/swipe", {
       state: { website: newWebsite.trim() },
     });
@@ -59,92 +55,124 @@ export default function Dashboard() {
   }
 
   return (
-    <Flex minH="100vh" bg="#0B0F1A" color="white" p={8} direction="column">
+    <Flex
+      bg="white"
+      minH="100vh"
+      direction="column"
+      px={{ base: 6, md: 16 }}
+      py={10}
+    >
       {/* HEADER */}
-      <Flex justify="space-between" align="center" mb={8}>
-        <Heading size="lg">Your Dashboard</Heading>
+      <Flex justify="space-between" align="center" mb={12}>
+        <Heading fontWeight="600" fontSize="2xl">
+          Dashboard
+        </Heading>
 
         <Button
+          variant="ghost"
+          fontSize="sm"
+          color="gray.600"
+          _hover={{ color: "black" }}
           onClick={handleLogout}
-          size="sm"
-          bg="red.500"
-          _hover={{ bg: "red.600" }}
+          px={2}
         >
-          Logout
+          Log out
         </Button>
       </Flex>
 
-      {/* SECTION TITLE */}
-      <Heading size="md" mb={4}>
-        Your Websites
-      </Heading>
+      {/* INTRO */}
+      <Box mb={10}>
+        <Heading fontSize="3xl" fontWeight="700" mb={2}>
+          Your Personalized Sources
+        </Heading>
+        <Text color="gray.600" maxW="600px" fontSize="lg">
+          Add your cybersecurity or news sources. We'll prepare your daily brief automatically.
+        </Text>
+      </Box>
 
       {/* EMPTY STATE */}
-      {websites.length === 0 ? (
-        <Box
-          bg="whiteAlpha.100"
-          p={6}
-          borderRadius="xl"
-          border="1px solid rgba(255,255,255,0.1)"
-          textAlign="center"
+      {websites.length === 0 && (
+        <Flex
+          direction="column"
+          align="center"
+          justify="center"
+          py={20}
+          border="2px dashed #E5E5E5"
+          borderRadius="lg"
+          mb={12}
         >
-          <Text color="gray.400" mb={4}>
-            You haven't added any websites yet.
+          <Text fontSize="lg" color="gray.600" mb={4}>
+            You haven’t added any websites yet.
           </Text>
 
           <Button
+            bg="black"
+            color="white"
+            px={8}
+            py={6}
+            borderRadius="lg"
             onClick={onOpen}
-            bg="purple.500"
-            _hover={{ bg: "purple.600" }}
+            _hover={{ bg: "gray.800" }}
           >
-            Add your first website
+            + Add your first website
           </Button>
-        </Box>
-      ) : (
+        </Flex>
+      )}
+
+      {/* WEBSITE GRID */}
+      {websites.length > 0 && (
         <>
-          {/* LIST OF WEBSITES */}
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+          <SimpleGrid columns={{ base: 2, md: 3, lg: 4 }} spacing={6} mb={16}>
             {websites.map((site, idx) => (
               <Box
                 key={idx}
-                bg="whiteAlpha.100"
+                borderRadius="lg"
+                border="1px solid #E5E5E5"
                 p={4}
-                borderRadius="xl"
-                border="1px solid rgba(255,255,255,0.1)"
+                textAlign="center"
+                cursor="pointer"
+                transition="0.2s"
+                bg="white"
+                _hover={{
+                  boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+                  transform: "translateY(-2px)",
+                }}
+                onClick={() =>
+                  navigate("/swipe", { state: { website: site } })
+                }
               >
-                <Text fontSize="lg">{site}</Text>
-
-                <Button
-                  mt={4}
-                  size="sm"
-                  bgGradient="linear(to-r, purple.500, indigo.600)"
-                  onClick={() =>
-                    navigate("/swipe", { state: { website: site } })
-                  }
-                >
-                  Open Swipe
-                </Button>
+                <Heading size="sm" mb={1}>
+                  {site}
+                </Heading>
+                <Text color="gray.500" fontSize="xs">
+                  Tap to refine
+                </Text>
               </Box>
             ))}
           </SimpleGrid>
 
-          <Button
-            mt={6}
-            onClick={onOpen}
-            w="200px"
-            bg="purple.500"
-            _hover={{ bg: "purple.600" }}
-          >
-            Add website
-          </Button>
+          {/* Add button only when user ALREADY has sites */}
+          <Flex justify="center" mt={16}>
+            <Button
+              bg="black"
+              color="white"
+              px={8}
+              py={6}
+              borderRadius="lg"
+              onClick={onOpen}
+              _hover={{ bg: "gray.800" }}
+            >
+              + Add website
+            </Button>
+          </Flex>
         </>
       )}
 
-      {/* ADD WEBSITE MODAL */}
+      {/* MODAL */}
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
-        <ModalContent bg="#111827" color="white">
-          <ModalHeader>Add a Website</ModalHeader>
+        <ModalContent borderRadius="lg" p={2}>
+          <ModalHeader>Add a website</ModalHeader>
           <ModalCloseButton />
 
           <ModalBody>
@@ -152,18 +180,23 @@ export default function Dashboard() {
               placeholder="example.com"
               value={newWebsite}
               onChange={(e) => setNewWebsite(e.target.value)}
-              bg="whiteAlpha.100"
+              borderRadius="lg"
+              border="2px solid #E5E5E5"
+              p={6}
             />
           </ModalBody>
 
           <ModalFooter>
-            <Button mr={3} onClick={onClose}>
+            <Button variant="ghost" mr={3} onClick={onClose}>
               Cancel
             </Button>
 
             <Button
-              bg="purple.500"
-              _hover={{ bg: "purple.600" }}
+              bg="black"
+              color="white"
+              borderRadius="lg"
+              px={6}
+              _hover={{ bg: "gray.900" }}
               onClick={addWebsite}
             >
               Add
