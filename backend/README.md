@@ -130,3 +130,4 @@ Minimal Express API with in-memory auth for quick prototyping.
     ```
   - Errors: `400` if user not found, invalid user ID, or neither `notificationType` nor `notificationFrequency` is provided.
   - Note: This merges with existing notification preferences - you can update just one field without losing the other.
+  - **Scheduler**: When both `notificationType` and `notificationFrequency` are set, a notification is automatically scheduled. For demo purposes, notifications are sent every 30 seconds regardless of the frequency setting. If `notificationType` is set to `none`, any scheduled notification is cancelled.
