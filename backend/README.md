@@ -78,3 +78,53 @@ Minimal Express API with in-memory auth for quick prototyping.
     }
     ```  
   - Errors: `400` if `messages` is missing/empty, `500` if the OpenAI request fails. Requires `OPENAI_API_KEY` in the environment.
+
+- `GET /display-types` — Get all available display types for article summaries.
+  - Input: none.
+  - Output: `200` with array of display types:
+    ```json
+    [
+      {
+        "id": "micro_summary",
+        "name": "Micro Summary",
+        "format": "Ultra-compressed, one-sentence summary",
+        "purpose": "Used in the feed; fastest way to decide if you want to open the article"
+      },
+      {
+        "id": "tech_bullets",
+        "name": "Tech Bullets",
+        "format": "Short, precise bullet points (3-5 key points)",
+        "purpose": "Best for technical readers (devs, secops, analysts)"
+      }
+      // ... more types
+    ]
+    ```
+
+- `POST /display-types/preferences` — Save user's preferred display types.
+  - Input (JSON body):
+    ```json
+    {
+      "userId": 1,
+      "displayTypeIds": ["micro_summary", "tech_bullets", "executive_summary"]
+    }
+    ```
+  - Output: `200` with success message:
+    ```json
+    { "message": "Preferences saved successfully" }
+    ```
+  - Errors: `400` if `userId` or `displayTypeIds` is invalid, `404` if user not found.
+
+- `GET /display-types/preferences/:userId` — Get user's preferred display types as full objects.
+  - Input: `userId` as URL parameter.
+  - Output: `200` with array of display type objects the user has selected:
+    ```json
+    [
+      {
+        "id": "micro_summary",
+        "name": "Micro Summary",
+        "format": "Ultra-compressed, one-sentence summary",
+        "purpose": "Used in the feed; fastest way to decide if you want to open the article"
+      }
+    ]
+    ```
+  - Errors: `400` if `userId` is invalid, `404` if user not found.

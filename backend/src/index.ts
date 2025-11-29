@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { authRouter } from './routes/authRoutes';
 import { chatGptRouter } from './routes/chatGptRoutes';
+import { displayTypeRouter } from './routes/displayTypeRoutes';
 
 dotenv.config();
 
@@ -19,6 +20,8 @@ app.get('/api/health', (_req, res) => {
 app.use('/auth', authRouter);
 
 app.use('/chatgpt', chatGptRouter);
+
+app.use('/display-types', displayTypeRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
