@@ -68,7 +68,7 @@ export class ChatGptService {
     });
 
     const textOutput = response.output.find((item) => item.type === 'message');
-    const content =
+    const initialContent =
       textOutput?.type === 'message'
         ? textOutput.content
             .filter((c): c is OpenAI.Responses.ResponseOutputText => c.type === 'output_text')
@@ -76,10 +76,59 @@ export class ChatGptService {
             .join('')
         : '';
 
+    // Validation step: check if summary follows instructions and improve if needed
+    const validatedContent = await this.validateAndImproveSummary(
+      initialContent,
+      systemPrompt
+    );
+
     return {
-      content,
+      content: validatedContent,
       raw: response,
     };
+  }
+
+  private async validateAndImproveSummary(
+    summary: string,
+    originalInstructions: string
+  ): Promise<string> {
+    const client = await this.getClient();
+
+    const validationPrompt = `You are a quality assurance validator. Your task is to validate that a summary follows the given instructions and improve it if necessary.
+
+ORIGINAL INSTRUCTIONS:
+${originalInstructions}
+
+GENERATED SUMMARY:
+${summary}
+
+VALIDATION TASK:
+1. Check if the summary strictly follows ALL requirements from the original instructions
+2. Check for any hallucinations, made-up information, or content that seems fabricated
+3. Verify the format matches what was requested (length, structure, tone)
+4. Ensure the output is properly formatted in markdown
+
+RESPONSE:
+- If the summary perfectly follows the instructions, return it EXACTLY as is (no changes)
+- If improvements are needed, return an improved version that better follows the instructions
+- Your output must be ONLY the final summary in markdown format - no explanations, no meta-commentary
+- Do NOT add any prefix like "Here's the improved version" - just output the summary directly`;
+
+    const response = await client.chat.completions.create({
+      model: this.model,
+      messages: [
+        {
+          role: 'system',
+          content: validationPrompt,
+        },
+        {
+          role: 'user',
+          content: 'Please validate and return the summary.',
+        },
+      ],
+    });
+
+    return response.choices[0]?.message?.content ?? summary;
   }
 
   async convertMarkdownToHtml(markdown: string): Promise<string> {
