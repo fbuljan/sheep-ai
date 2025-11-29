@@ -1,7 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { Preferences, User } from '../models/user';
 import { prisma } from '../prisma';
-import { Prisma } from '@prisma/client';
 
 export interface RegisterDto {
   name: string;
@@ -34,8 +33,8 @@ export class AuthService {
         name: data.name,
         email: data.email,
         passwordHash,
-        preferredWebsites: data.preferredWebsites as Prisma.JsonArray,
-        preferences: (data.preferences ?? {}) as Prisma.JsonObject,
+        preferredWebsites: data.preferredWebsites,
+        preferences: data.preferences ?? {},
         phoneNumber: data.phoneNumber ?? null,
       },
     });

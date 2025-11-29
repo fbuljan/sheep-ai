@@ -23,12 +23,19 @@ export default function Dashboard() {
   const [websites, setWebsites] = useState<string[]>([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // Load websites from localStorage
+  // Load websites from user's preferredWebsites
   useEffect(() => {
-    const stored = JSON.parse(
-      localStorage.getItem("websitePreferences") || "{}"
-    );
-    setWebsites(Object.keys(stored));
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        if (user.preferredWebsites && Array.isArray(user.preferredWebsites)) {
+          setWebsites(user.preferredWebsites);
+        }
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    }
   }, []);
 
   function addWebsite() {

@@ -9,6 +9,7 @@ import {
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import axios from "axios";
 
 const ALL_CATEGORIES = [
   "Malware",
@@ -32,7 +33,7 @@ export default function CategorySelect() {
   const [step, setStep] = useState(1); // 1 = enter website, 2 = categories
   const [error, setError] = useState("");
 
-  function validateWebsite() {
+  async function validateWebsite() {
     setError("");
 
     if (!website.trim()) {
@@ -51,6 +52,33 @@ export default function CategorySelect() {
     }
 
     setWebsite(clean);
+
+    // Save preferred website to backend
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        const currentWebsites = user.preferredWebsites || [];
+
+        // Only add if not already in the list
+        if (!currentWebsites.includes(clean)) {
+          const updatedWebsites = [...currentWebsites, clean];
+
+          const response = await axios.put(
+            `http://localhost:4000/users/${user.id}/preferred-websites`,
+            { preferredWebsites: updatedWebsites }
+          );
+
+          // Update local storage with new user data
+          const updatedUser = { ...user, preferredWebsites: updatedWebsites };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+      }
+    } catch (err) {
+      console.error("Error saving preferred website:", err);
+      // Continue anyway - don't block the user
+    }
+
     setStep(2);
   }
 
