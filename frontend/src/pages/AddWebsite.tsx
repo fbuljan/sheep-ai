@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Box, Input, Button, Flex, Heading, useToast, IconButton } from "@chakra-ui/react";
 import { ArrowBackIcon } from "@chakra-ui/icons";
 import axios from "axios";
+import { API_URL } from "../config/api";
 
 export default function AddWebsite() {
   const [url, setUrl] = useState("");
@@ -19,7 +20,7 @@ export default function AddWebsite() {
 
         if (!token || !user.id) return navigate("/login");
 
-        const res = await axios.get(`http://localhost:4000/users/${user.id}`, {
+        const res = await axios.get(`${API_URL}/users/${user.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

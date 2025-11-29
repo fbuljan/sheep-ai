@@ -14,6 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { API_URL } from "../config/api";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -37,9 +38,9 @@ export default function Settings() {
     async function load() {
       try {
         const [typesRes, freqRes, prefRes] = await Promise.all([
-          axios.get("http://localhost:4000/notifications/types"),
-          axios.get("http://localhost:4000/notifications/frequencies"),
-          axios.get(`http://localhost:4000/notifications/preferences/${userId}`)
+          axios.get(`${API_URL}/notifications/types`),
+          axios.get(`${API_URL}/notifications/frequencies`),
+          axios.get(`${API_URL}/notifications/preferences/${userId}`)
         ]);
 
         setTypes(typesRes.data);
@@ -87,7 +88,7 @@ export default function Settings() {
     try {
       // Save notification preferences
       await axios.put(
-        `http://localhost:4000/notifications/preferences/${userId}`,
+        `${API_URL}/notifications/preferences/${userId}`,
         {
           notificationType,
           notificationFrequency:
@@ -97,7 +98,7 @@ export default function Settings() {
 
       // Save phone number
       await axios.put(
-        `http://localhost:4000/auth/phone/${userId}`,
+        `${API_URL}/auth/phone/${userId}`,
         { phoneNumber }
       );
 

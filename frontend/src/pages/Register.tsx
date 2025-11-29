@@ -14,6 +14,7 @@ import {
   Spinner
 } from "@chakra-ui/react";
 import axios from "axios";
+import { API_URL } from "../config/api";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -34,11 +35,11 @@ export default function Register() {
 
   // Load available options from backend
   useEffect(() => {
-    axios.get("http://localhost:4000/notifications/types")
+    axios.get(`${API_URL}/notifications/types`)
       .then(res => setTypes(res.data))
       .catch(() => {}); 
 
-    axios.get("http://localhost:4000/notifications/frequencies")
+    axios.get(`${API_URL}/notifications/frequencies`)
       .then(res => setFrequencies(res.data))
       .catch(() => {});
   }, []);
@@ -100,7 +101,7 @@ export default function Register() {
       setLoading(true);
 
       // Create user
-      const res = await axios.post("http://localhost:4000/auth/register", {
+      const res = await axios.post(`${API_URL}/auth/register`, {
         name,
         email,
         password,
@@ -111,14 +112,14 @@ export default function Register() {
       const userId = res.data.id;
 
       // Save notification preferences
-      await axios.put(`http://localhost:4000/notifications/preferences/${userId}`, {
+      await axios.put(`${API_URL}/notifications/preferences/${userId}`, {
         notificationType,
         notificationFrequency: notificationType === "none" ? null : frequency
       });
 
       // Save phone number
       if (phoneNumber.trim()) {
-        await axios.put(`http://localhost:4000/auth/phone/${userId}`, {
+        await axios.put(`${API_URL}/auth/phone/${userId}`, {
           phoneNumber,
         });
       }

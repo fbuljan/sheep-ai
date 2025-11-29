@@ -14,6 +14,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { fetchCategories } from "../api/categories";
+import { API_URL } from "../config/api";
 
 export default function CategorySelect() {
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ export default function CategorySelect() {
       const websiteArray = Object.keys(localPrefs); // ← FIX
 
       await axios.put(
-        `http://localhost:4000/users/${userId}/preferred-websites`,
+        `${API_URL}/users/${userId}/preferred-websites`,
         { preferredWebsites: websiteArray },
         { headers: { Authorization: `Bearer ${token}` } }
       );
