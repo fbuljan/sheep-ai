@@ -261,6 +261,34 @@ Minimal Express API with in-memory auth for quick prototyping.
   - Errors: `400` if `phoneNumber` is missing, `404` if user not found.
   - Note: Set `phoneNumber` to `null` to remove the phone number.
 
+- `PUT /users/:id/categories/:source` — Set user's preferred categories for a source.
+  - Input: `id` and `source` path parameters, and JSON body:
+    ```json
+    {
+      "categories": ["Cybersecurity", "Data Breach", "Malware"]
+    }
+    ```
+  - Output: `200` with saved preference:
+    ```json
+    {
+      "source": "thehackernews",
+      "categories": ["Cybersecurity", "Data Breach", "Malware"]
+    }
+    ```
+  - Errors: `400` if `categories` is missing or not an array, `404` if user not found.
+  - Note: This updates or creates the category preference for the specified source without overwriting other preferences.
+
+- `GET /users/:id/categories/:source` — Get user's preferred categories for a source.
+  - Input: `id` and `source` path parameters.
+  - Output: `200` with preference object:
+    ```json
+    {
+      "source": "thehackernews",
+      "categories": ["Cybersecurity", "Data Breach", "Malware"]
+    }
+    ```
+  - Note: Returns empty `categories` array if no preferences are set for that source.
+
 ### Category Endpoints
 
 - `GET /categories/:source` — Get categories for a specific source.

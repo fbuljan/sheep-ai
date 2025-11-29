@@ -1,4 +1,4 @@
-import { Preferences, User } from '../models/user';
+import { Preferences, SourceCategoryPreference, User } from '../models/user';
 import { prisma } from '../prisma';
 import { Prisma } from '@prisma/client';
 
@@ -62,5 +62,63 @@ export class UserService {
       preferences: user.preferences as unknown as Preferences,
       phoneNumber: user.phoneNumber ?? null,
     };
+  }
+
+  async setSourceCategories(
+    userId: number,
+    source: string,
+    categories: string[]
+  ): Promise<SourceCategoryPreference> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw { code: 'P2025' };
+    }
+
+    const preferences = (user.preferences as unknown as Preferences) || {};
+    const sourceCategories: SourceCategoryPreference[] = preferences.sourceCategories || [];
+
+    // Update or add the source categories
+    const existingIndex = sourceCategories.findIndex((sc) => sc.source === source);
+    if (existingIndex >= 0) {
+      sourceCategories[existingIndex].categories = categories;
+    } else {
+      sourceCategories.push({ source, categories });
+    }
+
+    // Update preferences without overwriting other fields
+    const updatedPreferences = {
+      ...preferences,
+      sourceCategories,
+    };
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        preferences: updatedPreferences as unknown as Prisma.JsonObject,
+      },
+    });
+
+    return { source, categories };
+  }
+
+  async getSourceCategories(
+    userId: number,
+    source: string
+  ): Promise<SourceCategoryPreference | null> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    const preferences = (user.preferences as unknown as Preferences) || {};
+    const sourceCategories: SourceCategoryPreference[] = preferences.sourceCategories || [];
+
+    return sourceCategories.find((sc) => sc.source === source) || null;
   }
 }

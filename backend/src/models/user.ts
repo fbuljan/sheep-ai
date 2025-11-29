@@ -1,4 +1,10 @@
+export interface SourceCategoryPreference {
+  source: string;
+  categories: string[];
+}
+
 export interface Preferences {
+  sourceCategories?: SourceCategoryPreference[];
   [key: string]: any;
 }
 
