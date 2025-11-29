@@ -18,3 +18,11 @@ model User {
   preferences       Json
   phoneNumber       String?
 }
+
+model Article {
+  id          Int      @id @default(autoincrement())
+  url         String   @unique
+  data        Json
+  scrapedAt   DateTime @default(now())
+  source      String
+}
