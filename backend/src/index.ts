@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import { authRouter } from './routes/authRoutes';
 import { scraperRouter } from './routes/scraperRoutes';
 import { schedulerService } from './services/schedulerService';
+import { chatGptRouter } from './routes/chatGptRoutes';
+import { notificationRouter } from './routes/notificationRoutes';
 
 dotenv.config();
 
@@ -19,6 +21,10 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/auth', authRouter);
 app.use('/api/scraper', scraperRouter);
+
+app.use('/chatgpt', chatGptRouter);
+
+app.use('/notifications', notificationRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

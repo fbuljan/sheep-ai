@@ -25,6 +25,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "node-cron": "^4.2.1",
+    "openai": "^6.9.1",
     "prisma": "^7.0.1"
   },
   "devDependencies": {

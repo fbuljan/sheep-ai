@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -8,37 +8,35 @@ import {
   Input,
   Button,
   VStack,
+  Link,
+  Spinner
 } from "@chakra-ui/react";
-import { loginUser } from "../api/auth";
 
-import { useEffect } from "react";
+import { loginUser } from "../api/auth";
 
 export default function Login() {
   const navigate = useNavigate();
 
-    useEffect(() => {
+  useEffect(() => {
     if (localStorage.getItem("token")) {
-        navigate("/dashboard");
+      navigate("/dashboard");
     }
-    }, []);
+  }, [navigate]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleLogin() {
     try {
-      setLoading(true);
       setError("");
+      setLoading(true);
 
       const res = await loginUser({ email, password });
-
-      // Save token + redirect
       localStorage.setItem("token", res.token);
       navigate("/dashboard");
-    } catch (err: any) {
+    } catch {
       setError("Invalid email or password");
     } finally {
       setLoading(false);
@@ -47,102 +45,84 @@ export default function Login() {
 
   return (
     <Flex
+      bg="white"
       minH="100vh"
-      bgGradient="linear(to-br, #0B0F1A, #0A0D16, black)"
+      direction="column"
       align="center"
       justify="center"
       px={6}
     >
-      <Box
-        bg="whiteAlpha.50"
-        backdropFilter="blur(20px)"
-        borderRadius="2xl"
-        border="1px solid rgba(255,255,255,0.1)"
-        boxShadow="0 0 40px rgba(99,102,241,0.2)"
-        p={10}
-        w="full"
-        maxW="sm"
+      {/* Logo top */}
+      <Flex
+        position="absolute"
+        top="30px"
+        left="30px"
+        fontSize="2xl"
+        fontWeight="bold"
+        cursor="pointer"
+        onClick={() => navigate("/")}
       >
-        {/* Logo */}
-        <Flex direction="column" align="center" mb={8}>
-          <Box
-            fontSize="3xl"
-            bgGradient="linear(to-br, purple.400, indigo.500)"
-            w={14}
-            h={14}
-            borderRadius="xl"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            color="white"
-            shadow="lg"
-          >
-          </Box>
+        SheepAI
+      </Flex>
 
-          <Heading mt={6} color="white" fontSize="3xl" fontWeight="semibold">
-            Sign in
-          </Heading>
+      {/* Container */}
+      <Box w="full" maxW="420px" textAlign="center">
+        <Heading mb={4} fontWeight="600">
+          Sign in to your account
+        </Heading>
 
-          <Text color="gray.400" fontSize="sm">
-            Welcome back to SheepAI
-          </Text>
-        </Flex>
+        <Text color="gray.600" fontSize="md" mb={10}>
+          Continue where you left off in your personalized brief.
+        </Text>
 
-        {/* Form */}
+        {loading && (
+          <Spinner size="lg" color="black" mb={4} thickness="3px" />
+        )}
+
         <VStack spacing={5}>
-          <Box w="full">
-            <Text color="gray.300" mb={1} fontSize="sm">
-              Email
-            </Text>
-            <Input
-              type="email"
-              bg="whiteAlpha.100"
-              border="1px solid rgba(255,255,255,0.1)"
-              color="white"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              _placeholder={{ color: "gray.500" }}
-              placeholder="you@example.com"
-            />
-          </Box>
+          <Input
+            placeholder="Email"
+            bg="white"
+            border="2px solid #e5e5e5"
+            borderRadius="lg"
+            p={6}
+            fontSize="md"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-          <Box w="full">
-            <Text color="gray.300" mb={1} fontSize="sm">
-              Password
-            </Text>
-            <Input
-              type="password"
-              bg="whiteAlpha.100"
-              border="1px solid rgba(255,255,255,0.1)"
-              color="white"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              _placeholder={{ color: "gray.500" }}
-              placeholder="••••••••"
-            />
-          </Box>
+          <Input
+            type="password"
+            placeholder="Password"
+            bg="white"
+            border="2px solid #e5e5e5"
+            borderRadius="lg"
+            p={6}
+            fontSize="md"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
 
-          {error && <Text color="red.300">{error}</Text>}
+          {error && <Text color="red.500">{error}</Text>}
 
           <Button
             w="full"
-            py={6}
+            bg="black"
             color="white"
-            bgGradient="linear(to-r, purple.500, indigo.600)"
-            _hover={{ opacity: 0.9 }}
-            borderRadius="xl"
-            shadow="xl"
+            py={6}
+            borderRadius="lg"
+            fontSize="md"
+            _hover={{ bg: "gray.800" }}
             onClick={handleLogin}
-            isLoading={loading}
           >
-            Continue
+            Sign in
           </Button>
 
-          <Text color="gray.400" fontSize="sm">
+          <Text fontSize="sm" color="gray.600">
             Don’t have an account?{" "}
-            <a href="/register" style={{ color: "#818CF8" }}>
+            <Link color="blue.500" onClick={() => navigate("/register")}>
               Create one
-            </a>
+            </Link>
           </Text>
         </VStack>
       </Box>
