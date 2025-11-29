@@ -82,10 +82,41 @@ export class ChatGptService {
       systemPrompt
     );
 
+    // Get estimated read time for the original article
+    const estimatedReadTime = await this.estimateReadTime(articleUrl);
+
     return {
       content: validatedContent,
+      estimatedReadTime,
       raw: response,
     };
+  }
+
+  async estimateReadTime(articleUrl: string): Promise<string> {
+    const client = await this.getClient();
+
+    const response = await client.responses.create({
+      model: this.model,
+      tools: [{ type: 'web_search_preview' }],
+      instructions: `You are a read time estimator. Your task is to estimate how long it would take an average reader to read the full article content.
+
+IMPORTANT: Your response must be ONLY the estimated time in the format "X mins" where X is a number.
+Examples of valid responses: "2 mins", "5 mins", "10 mins"
+Do NOT include any other text, explanation, or formatting - just the number followed by "mins".`,
+      input: `Please fetch and read the full article content from this URL: ${articleUrl}\n\nEstimate the read time based on the article length.`,
+    });
+
+    const textOutput = response.output.find((item) => item.type === 'message');
+    const readTime =
+      textOutput?.type === 'message'
+        ? textOutput.content
+            .filter((c): c is OpenAI.Responses.ResponseOutputText => c.type === 'output_text')
+            .map((c) => c.text)
+            .join('')
+            .trim()
+        : '3 mins';
+
+    return readTime;
   }
 
   private async validateAndImproveSummary(
