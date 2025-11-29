@@ -142,8 +142,8 @@ export default function Register() {
       py={10}
       align="center"
     >
-      <Flex w="100%" justify="space-between" align="center" mb={12}>
-        <Logo />
+      <Flex w="100%" justify="flex-end" align="center" mb={12} position="relative" zIndex={1}>
+        <Logo absolute />
         <Button variant="ghost" onClick={() => navigate("/")}>Cancel</Button>
       </Flex>
 
