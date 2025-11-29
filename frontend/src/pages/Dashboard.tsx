@@ -18,6 +18,7 @@ import { HamburgerIcon } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { API_URL } from "../config/api";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ export default function Dashboard() {
         }
 
         const res = await axios.get(
-          `http://localhost:4000/users/${user.id}`,
+          `${API_URL}/users/${user.id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 

@@ -1,9 +1,8 @@
 import axios from "axios";
-
-const API = "http://localhost:4000";
+import { API_URL } from "../config/api";
 
 export async function fetchCategories(source: string) {
-  const res = await axios.get(`${API}/categories/${source}`);
+  const res = await axios.get(`${API_URL}/categories/${source}`);
   console.log("✅ Backend response:", res.data);
   return res.data;
 }
