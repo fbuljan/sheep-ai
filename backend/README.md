@@ -339,3 +339,55 @@ Minimal Express API with in-memory auth for quick prototyping.
     - If categories already exist for the source, returns them from the database.
     - If no categories exist, generates them using OpenAI by analyzing all articles for that source, saves them to the database, and returns them with article-to-category mappings.
   - Note: `articleCategories` maps article IDs to their assigned categories. This is only populated when categories are freshly generated.
+
+### Display types
+
+- `GET /display-types` — Get all available display types for article summaries.
+  - Input: none.
+  - Output: `200` with array of display types:
+    ```json
+    [
+      {
+        "id": "micro_summary",
+        "name": "Micro Summary",
+        "format": "Ultra-compressed, one-sentence summary",
+        "purpose": "Used in the feed; fastest way to decide if you want to open the article"
+      },
+      {
+        "id": "tech_bullets",
+        "name": "Tech Bullets",
+        "format": "Short, precise bullet points (3-5 key points)",
+        "purpose": "Best for technical readers (devs, secops, analysts)"
+      }
+      // ... more types
+    ]
+    ```
+
+- `POST /display-types/preferences` — Save user's preferred display types.
+  - Input (JSON body):
+    ```json
+    {
+      "userId": 1,
+      "displayTypeIds": ["micro_summary", "tech_bullets", "executive_summary"]
+    }
+    ```
+  - Output: `200` with success message:
+    ```json
+    { "message": "Preferences saved successfully" }
+    ```
+  - Errors: `400` if `userId` or `displayTypeIds` is invalid, `404` if user not found.
+
+- `GET /display-types/preferences/:userId` — Get user's preferred display types as full objects.
+  - Input: `userId` as URL parameter.
+  - Output: `200` with array of display type objects the user has selected:
+    ```json
+    [
+      {
+        "id": "micro_summary",
+        "name": "Micro Summary",
+        "format": "Ultra-compressed, one-sentence summary",
+        "purpose": "Used in the feed; fastest way to decide if you want to open the article"
+      }
+    ]
+    ```
+  - Errors: `400` if `userId` is invalid, `404` if user not found.
