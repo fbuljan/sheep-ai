@@ -191,7 +191,7 @@ export default function Swipe() {
       w="100%"
     >
       <Heading fontSize="2xl" mb={4}>
-        How SIKUM learns your style
+        How SIKUM learns your preferences of summarization
       </Heading>
 
       <Box mb={6}>
