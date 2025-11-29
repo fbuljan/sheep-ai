@@ -2,6 +2,7 @@ import { Flex, Heading, SimpleGrid, Box, Text, Spinner } from "@chakra-ui/react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { API_URL } from "../config/api";
 
 interface Article {
   id: number;
@@ -33,7 +34,7 @@ export default function WebsiteBrief() {
         const source = website.split(".")[0];
 
         const response = await axios.get(
-          `http://localhost:4000/users/${userId}/articles/${source}`,
+          `${API_URL}/users/${userId}/articles/${source}`,
         );
 
         setArticles(response.data.articles);

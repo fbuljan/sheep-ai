@@ -12,6 +12,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import axios from "axios";
+import { API_URL } from "../config/api";
 
 const MotionBox = motion(Box);
 
@@ -160,7 +161,7 @@ export default function Swipe() {
         .map((id) => DISPLAY_MAP[id])
         .filter((x): x is string => x !== null);
 
-      await axios.post("http://localhost:4000/display-types/preferences", {
+      await axios.post(`${API_URL}/display-types/preferences`, {
         userId,
         displayTypeIds: chosen,
       });
