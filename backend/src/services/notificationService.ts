@@ -6,6 +6,7 @@ import {
   NotificationOption,
 } from '../models/notification';
 import { Prisma } from '@prisma/client';
+import { scheduleNotification, cancelScheduledNotification } from './notificationScheduler';
 
 export class NotificationService {
   getNotificationTypes(): NotificationOption[] {
@@ -66,6 +67,13 @@ export class NotificationService {
         preferences: updatedPreferences as unknown as Prisma.JsonObject,
       },
     });
+
+    // Schedule or cancel notification based on type
+    if (updatedNotification.notificationType === 'none') {
+      cancelScheduledNotification(userId);
+    } else if (updatedNotification.notificationType && updatedNotification.notificationFrequency) {
+      scheduleNotification(userId);
+    }
 
     return updatedNotification;
   }

@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { authRouter } from './routes/authRoutes';
+import { scraperRouter } from './routes/scraperRoutes';
+import { schedulerService } from './services/schedulerService';
 import { chatGptRouter } from './routes/chatGptRoutes';
 import { notificationRouter } from './routes/notificationRoutes';
 
@@ -18,6 +20,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/auth', authRouter);
+app.use('/api/scraper', scraperRouter);
 
 app.use('/chatgpt', chatGptRouter);
 
@@ -25,4 +28,10 @@ app.use('/notifications', notificationRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+
+  // Auto-start scheduler if enabled
+  if (process.env.AUTO_START_SCHEDULER === 'true') {
+    schedulerService.startDailyScraping();
+    console.log('Daily scraper scheduler started');
+  }
 });
