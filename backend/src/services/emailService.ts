@@ -189,6 +189,5 @@ export async function sendNotificationEmail(options: EmailOptions): Promise<void
     console.log(`[Email Service] Email sent successfully to ${to}`);
   } catch (error) {
     console.error(`[Email Service] Failed to send email to ${to}:`, error);
-    throw error;
   }
 }
