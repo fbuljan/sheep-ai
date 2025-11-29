@@ -11,3 +11,12 @@ userRouter.put('/:id/preferred-websites', (req, res) => userController.updatePre
 
 // PUT /users/:id/phone-number
 userRouter.put('/:id/phone-number', (req, res) => userController.updatePhoneNumber(req, res));
+
+// PUT /users/:id/categories/:source
+userRouter.put('/:id/categories/:source', (req, res) => userController.setSourceCategories(req, res));
+
+// GET /users/:id/categories/:source
+userRouter.get('/:id/categories/:source', (req, res) => userController.getSourceCategories(req, res));
+
+// GET /users/:id/articles/:source
+userRouter.get('/:id/articles/:source', (req, res) => userController.getArticlesByPreferredCategories(req, res));

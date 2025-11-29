@@ -95,7 +95,7 @@ export default function Swipe() {
           cursor="pointer"
           onClick={() => navigate("/dashboard")}
         >
-          SheepAI
+          SIKUM
         </Heading>
 
         <Button

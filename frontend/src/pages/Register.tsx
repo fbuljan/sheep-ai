@@ -141,7 +141,7 @@ export default function Register() {
       align="center"
     >
       <Flex w="100%" justify="space-between" mb={12}>
-        <Heading fontSize="2xl">🐑 SheepAI</Heading>
+        <Heading fontSize="2xl">SIKUM</Heading>
         <Button variant="ghost" onClick={() => navigate("/")}>Cancel</Button>
       </Flex>
 

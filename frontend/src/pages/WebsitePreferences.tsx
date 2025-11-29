@@ -62,7 +62,7 @@ export default function WebsitePreferences() {
           cursor="pointer"
           onClick={() => navigate("/dashboard")}
         >
-          🐑 SheepAI
+          SIKUM
         </Heading>
 
         <Button variant="ghost" onClick={() => navigate("/dashboard")}>

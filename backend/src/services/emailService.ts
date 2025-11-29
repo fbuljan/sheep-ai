@@ -26,7 +26,7 @@ export async function sendNotificationEmail(options: EmailOptions): Promise<void
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sheep AI Notification</title>
+  <title>SIKUM Notification</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -37,7 +37,7 @@ export async function sendNotificationEmail(options: EmailOptions): Promise<void
           <tr>
             <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700;">
-                🐑 Sheep AI
+                SIKUM
               </h1>
               <p style="margin: 10px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">
                 Your personalized news digest
@@ -52,7 +52,7 @@ export async function sendNotificationEmail(options: EmailOptions): Promise<void
                 Hi ${userName}! 👋
               </h2>
               <p style="margin: 0 0 20px; color: #555555; font-size: 16px; line-height: 1.6;">
-                Here's your <strong>${frequency}</strong> digest of personalized news and insights curated just for you by Sheep AI.
+                Here's your <strong>${frequency}</strong> digest of personalized news and insights curated just for you by SIKUM.
               </p>
 
               <!-- Feature Box -->
@@ -63,7 +63,7 @@ export async function sendNotificationEmail(options: EmailOptions): Promise<void
                       📰 What's New Today
                     </h3>
                     <p style="margin: 0; color: #666666; font-size: 14px; line-height: 1.6;">
-                      Stay informed with the latest updates from your favorite sources. Sheep AI has analyzed trending topics and curated content that matches your interests.
+                      Stay informed with the latest updates from your favorite sources. SIKUM has analyzed trending topics and curated content that matches your interests.
                     </p>
                   </td>
                 </tr>
@@ -89,7 +89,7 @@ export async function sendNotificationEmail(options: EmailOptions): Promise<void
                 You're receiving this because you subscribed to ${frequency} notifications.
               </p>
               <p style="margin: 0; color: #999999; font-size: 12px;">
-                © ${new Date().getFullYear()} Sheep AI. All rights reserved.
+                © ${new Date().getFullYear()} SIKUM. All rights reserved.
               </p>
             </td>
           </tr>
@@ -102,7 +102,7 @@ export async function sendNotificationEmail(options: EmailOptions): Promise<void
   `;
 
   const mailOptions = {
-    from: '"Sheep AI" <sikum.notifications@gmail.com>',
+    from: '"SIKUM" <sikum.notifications@gmail.com>',
     to,
     subject,
     html: htmlContent,

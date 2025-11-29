@@ -130,7 +130,7 @@ export default function Settings() {
     >
       {/* HEADER */}
       <Flex w="100%" justify="space-between" mb={10}>
-        <Heading fontSize="2xl">🐑 SheepAI</Heading>
+        <Heading fontSize="2xl">SIKUM</Heading>
         <Button variant="ghost" onClick={() => navigate("/dashboard")}>
           Back
         </Button>

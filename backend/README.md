@@ -260,3 +260,82 @@ Minimal Express API with in-memory auth for quick prototyping.
   - Output: `200` with updated user object.
   - Errors: `400` if `phoneNumber` is missing, `404` if user not found.
   - Note: Set `phoneNumber` to `null` to remove the phone number.
+
+- `PUT /users/:id/categories/:source` — Set user's preferred categories for a source.
+  - Input: `id` and `source` path parameters, and JSON body:
+    ```json
+    {
+      "categories": ["Cybersecurity", "Data Breach", "Malware"]
+    }
+    ```
+  - Output: `200` with saved preference:
+    ```json
+    {
+      "source": "thehackernews",
+      "categories": ["Cybersecurity", "Data Breach", "Malware"]
+    }
+    ```
+  - Errors: `400` if `categories` is missing or not an array, `404` if user not found.
+  - Note: This updates or creates the category preference for the specified source without overwriting other preferences.
+
+- `GET /users/:id/categories/:source` — Get user's preferred categories for a source.
+  - Input: `id` and `source` path parameters.
+  - Output: `200` with preference object:
+    ```json
+    {
+      "source": "thehackernews",
+      "categories": ["Cybersecurity", "Data Breach", "Malware"]
+    }
+    ```
+  - Note: Returns empty `categories` array if no preferences are set for that source.
+
+- `GET /users/:id/articles/:source` — Get articles filtered by user's preferred categories for a source.
+  - Input: `id` and `source` path parameters.
+  - Query parameters (optional):
+    - `limit` — Maximum number of articles to return (e.g., `?limit=10`)
+  - Output: `200` with filtered articles:
+    ```json
+    {
+      "success": true,
+      "count": 5,
+      "preferredCategories": ["Cybersecurity", "Data Breach"],
+      "articles": [
+        {
+          "id": 1,
+          "url": "https://example.com/article",
+          "scrapedAt": "2025-11-29T10:00:00.000Z",
+          "source": "thehackernews",
+          "data": {
+            "title": "Article Title",
+            "summary": "Article summary..."
+          },
+          "categories": ["Cybersecurity", "Malware"]
+        }
+      ]
+    }
+    ```
+  - Behavior: Returns only articles from the specified source that have at least one category matching the user's preferred categories.
+  - Note: Returns empty `articles` array if user has no preferred categories set for this source.
+
+### Category Endpoints
+
+- `GET /categories/:source` — Get categories for a specific source.
+  - Input: `source` path parameter (e.g., `thehackernews`).
+  - Output: `200` with categories and article mappings:
+    ```json
+    {
+      "success": true,
+      "categories": [
+        { "id": 1, "name": "Cybersecurity", "source": "thehackernews" },
+        { "id": 2, "name": "Data Breach", "source": "thehackernews" }
+      ],
+      "articleCategories": {
+        "1": ["Cybersecurity", "Data Breach"],
+        "2": ["Malware", "Ransomware"]
+      }
+    }
+    ```
+  - Behavior:
+    - If categories already exist for the source, returns them from the database.
+    - If no categories exist, generates them using OpenAI by analyzing all articles for that source, saves them to the database, and returns them with article-to-category mappings.
+  - Note: `articleCategories` maps article IDs to their assigned categories. This is only populated when categories are freshly generated.

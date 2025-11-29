@@ -116,7 +116,7 @@ export default function CategorySelect() {
           cursor="pointer"
           onClick={() => navigate("/dashboard")}
         >
-          SheepAI
+          SIKUM
         </Heading>
 
         <Button
