@@ -1,8 +1,9 @@
 import dotenv from 'dotenv';
 import type OpenAI from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import { promptLibrary } from '../utils/prompts';
+import { promptLibrary, getDisplayTypePrompt } from '../utils/prompts';
 import type { PromptKey } from '../utils/prompts';
+import { DisplayType } from '../models/displayType';
 
 dotenv.config();
 
@@ -53,5 +54,109 @@ export class ChatGptService {
       usage: response.usage,
       raw: response,
     };
+  }
+
+  async generateArticleSummary(articleUrl: string, displayType: DisplayType) {
+    const client = await this.getClient();
+    const systemPrompt = getDisplayTypePrompt(displayType);
+
+    const response = await client.responses.create({
+      model: this.model,
+      tools: [{ type: 'web_search_preview' }],
+      instructions: systemPrompt,
+      input: `Please fetch and read the full article content from this URL: ${articleUrl}\n\nThen summarize it according to the instructions. Your output should be summary formatted with markdown. Include title/header.`,
+    });
+
+    const textOutput = response.output.find((item) => item.type === 'message');
+    const initialContent =
+      textOutput?.type === 'message'
+        ? textOutput.content
+            .filter((c): c is OpenAI.Responses.ResponseOutputText => c.type === 'output_text')
+            .map((c) => c.text)
+            .join('')
+        : '';
+
+    // Validation step: check if summary follows instructions and improve if needed
+    const validatedContent = await this.validateAndImproveSummary(
+      initialContent,
+      systemPrompt
+    );
+
+    return {
+      content: validatedContent,
+      raw: response,
+    };
+  }
+
+  private async validateAndImproveSummary(
+    summary: string,
+    originalInstructions: string
+  ): Promise<string> {
+    const client = await this.getClient();
+
+    const validationPrompt = `You are a quality assurance validator. Your task is to validate that a summary follows the given instructions and improve it if necessary.
+
+ORIGINAL INSTRUCTIONS:
+${originalInstructions}
+
+GENERATED SUMMARY:
+${summary}
+
+VALIDATION TASK:
+1. Check if the summary strictly follows ALL requirements from the original instructions
+2. Check for any hallucinations, made-up information, or content that seems fabricated
+3. Verify the format matches what was requested (length, structure, tone)
+4. Ensure the output is properly formatted in markdown
+
+RESPONSE:
+- If the summary perfectly follows the instructions, return it EXACTLY as is (no changes)
+- If improvements are needed, return an improved version that better follows the instructions
+- Your output must be ONLY the final summary in markdown format - no explanations, no meta-commentary
+- Do NOT add any prefix like "Here's the improved version" - just output the summary directly`;
+
+    const response = await client.chat.completions.create({
+      model: this.model,
+      messages: [
+        {
+          role: 'system',
+          content: validationPrompt,
+        },
+        {
+          role: 'user',
+          content: 'Please validate and return the summary.',
+        },
+      ],
+    });
+
+    return response.choices[0]?.message?.content ?? summary;
+  }
+
+  async convertMarkdownToHtml(markdown: string): Promise<string> {
+    const client = await this.getClient();
+
+    const response = await client.chat.completions.create({
+      model: this.model,
+      messages: [
+        {
+          role: 'system',
+          content: `You are a markdown to HTML converter. Convert the given markdown to clean, email-safe HTML.
+Use inline styles for formatting (no external CSS).
+Use these styles:
+- Headers: font-weight bold, appropriate font sizes
+- Paragraphs: margin-bottom 16px, line-height 1.6
+- Lists: proper list styling with padding
+- Bold/italic: appropriate font-weight/style
+- Links: color #667eea
+
+Return ONLY the HTML content, no explanation or markdown code blocks.`,
+        },
+        {
+          role: 'user',
+          content: markdown,
+        },
+      ],
+    });
+
+    return response.choices[0]?.message?.content ?? '';
   }
 }

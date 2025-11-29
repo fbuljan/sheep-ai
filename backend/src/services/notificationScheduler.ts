@@ -41,6 +41,7 @@ async function sendNotification(userId: number): Promise<void> {
         subject: `🐑 Your ${notificationFrequency} SIKUM digest`,
         userName: user.name,
         frequency: notificationFrequency || 'daily',
+        userId,
       });
       break;
     case 'whatsapp':
@@ -54,6 +55,7 @@ async function sendNotification(userId: number): Promise<void> {
         subject: `🐑 Your ${notificationFrequency} SIKUM digest`,
         userName: user.name,
         frequency: notificationFrequency || 'daily',
+        userId,
       });
       // TODO: Implement WhatsApp API
       console.log(`[WhatsApp Notification] To: ${user.phoneNumber || 'No phone number'}`);

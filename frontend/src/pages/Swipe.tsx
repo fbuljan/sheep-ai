@@ -1,256 +1,497 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import {
   Box,
   Flex,
-  Heading,
   Text,
   Button,
+  Heading,
   Progress,
+  Image,
 } from "@chakra-ui/react";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useLocation, useNavigate } from "react-router-dom";
+import { motion, useMotionValue, useTransform } from "framer-motion";
 
 const MotionBox = motion(Box);
 
 export default function Swipe() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const website = location.state?.website || "Unknown source";
+  const location = useLocation();
+  const website: string | undefined = location.state?.website;
 
-  const [index, setIndex] = useState(0);
-  const [direction, setDirection] = useState<"left" | "right">("right");
+  // ----- HARD-CODED CARDS -----
+  const contentCards = [
+  // 1) Tech Bullet
+    {
+      id: "tech-bullet",
+      type: "Tech Bullet Summary",
+      header: "TECH BULLET SUMMARY",
+      title: "Microsoft Teams Guest Access Security Gap",
+      source: "hackernews.com",
+      date: "Nov 28, 2025",
+      bullets: [
+        "Guest access uses the host tenant’s security policies.",
+        "Defender protections from the user’s home org do not follow them.",
+        "Attackers can create malicious tenants cheaply.",
+        "Guest invites bypass email authentication checks.",
+        "Malware/phishing links delivered without detection."
+      ],
+      risk: "High"
+    },
 
-  // Placeholder items – ovdje će kasnije doći pravi scrapan THN sadržaj
-  const fakeItems = [
+    // 2) Story Mode
     {
-      title: `Security alert on ${website}`,
-      summary:
-        "A recent vulnerability has been reported affecting multiple systems. This is placeholder content for the swipe engine.",
+      id: "story-mode",
+      type: "Story Mode Summary",
+      header: "STORY MODE SUMMARY",
+      title: "Imagine stepping into someone else’s digital workspace.",
+      source: "hackernews.com",
+      date: "Nov 28, 2025",
+      text:
+        "The moment you do, your company’s security stays behind. If the workspace belongs to an attacker, they can send harmful links or files—and your company won’t see a thing.",
+      image: "/story.png"  
     },
+
+    // 3) Deep Structured Brief
     {
-      title: `New phishing campaign spotted`,
-      summary:
-        "A new phishing campaign is using lookalike domains to trick users into sharing credentials.",
+      id: "deep-brief",
+      type: "Deep Structured Brief",
+      header: "DEEP STRUCTURED BRIEF",
+      title: "Microsoft Teams Guest Access Security Gap",
+      source: "hackernews.com",
+      date: "Nov 28, 2025",
+      sections: {
+        "What happened":
+          "Joining an external Teams tenant applies that tenant’s security controls.",
+        "How the attack works":
+          "Attackers create a cheap MS tenant with no safeguards and send guest invites.",
+        Impact:
+          "Malware or phishing can be delivered undetected because it happens outside the org’s security boundary."
+      }
     },
+
+    // 4) Micro Summary
     {
-      title: `Malware trend: stealthy loaders`,
+      id: "micro-summary",
+      type: "Micro Summary",
+      header: "MICRO SUMMARY",
+      title: "Microsoft Teams Guest Access Security Gap",
+      source: "hackernews.com",
+      date: "Nov 28, 2025",
       summary:
-        "Stealthy malware loaders are increasingly used to stage multi-step attacks in corporate environments.",
+        "Teams guest access lets attackers place users inside external tenants where protections do not apply."
     },
+
+    // 5) Podcast (coming soon)
+    {
+      id: "podcast",
+      type: "Podcast",
+      header: "PODCAST",
+      comingSoon: true,
+      title: "Microsoft Teams Guest Access Security Gap",
+      source: "hackernews.com",
+      date: "Nov 28, 2025",
+      summary:
+        "In today’s briefing: researchers found a gap in Teams guest access attackers can abuse.",
+      image: "/podcast.png"  
+    },
+
+    // 6) VIDEO (coming soon)
+    {
+      id: "video",
+      type: "Video",
+      header: "VIDEO",
+      comingSoon: true,
+      title: "Microsoft Teams Guest Access Security Gap",
+      source: "hackernews.com",
+      date: "Nov 28, 2025",
+      summary:
+        "Watch a short video presentation of the key points.",
+      image: "/video.png" 
+    }
   ];
 
-  const total = fakeItems.length;
-  const current = fakeItems[index];
-  const next = index < total - 1 ? fakeItems[index + 1] : null;
 
-  const progressValue =
-    total > 1 ? (index / (total - 1)) * 100 : 100;
+  // intro + content cards = steps
+  const totalSteps = 1 + contentCards.length; // 0 = intro, 1..n = cards
 
-  function goToNext(dir: "left" | "right") {
-    setDirection(dir);
+  const [step, setStep] = useState(0); // 0 = intro
+  const [liked, setLiked] = useState<string[]>([]);
+  const [skipped, setSkipped] = useState<string[]>([]);
 
-    setTimeout(() => {
-      if (index < total - 1) {
-        setIndex((prev) => prev + 1);
-      } else {
-        navigate("/dashboard");
-      }
-    }, 300); // trajanje exit animacije
-  }
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-200, 200], [-8, 8]);
+  const baseOpacity = useTransform(x, [-200, 0, 200], [0.4, 1, 0.4]);
 
-  function handleDragEnd(
-    _e: MouseEvent | TouchEvent | PointerEvent,
-    info: { offset: { x: number }; velocity: { x: number } }
-  ) {
-    const offsetX = info.offset.x;
-    const threshold = 120;
+  const likeOpacity = useTransform(x, [40, 140], [0, 1]);
+  const skipOpacity = useTransform(x, [-140, -40], [1, 0]);
 
-    if (offsetX > threshold) {
-      goToNext("right");
-    } else if (offsetX < -threshold) {
-      goToNext("left");
+  const isIntro = step === 0;
+  const currentCard = step > 0 ? contentCards[step - 1] : null;
+
+  function goNext(decision?: "like" | "skip") {
+    if (isIntro) {
+      setStep(1);
+      return;
     }
-    // inače se zbog dragSnapToOrigin kartica vrati
+
+    if (currentCard && decision) {
+      if (decision === "like") {
+        setLiked((prev) => [...prev, currentCard.id]);
+      } else {
+        setSkipped((prev) => [...prev, currentCard.id]);
+      }
+    }
+
+    if (step >= totalSteps - 1) {
+      // kraj swipanja, možemo ovdje kasnije spremati preferencije na backend
+      navigate("/dashboard");
+      return;
+    }
+
+    setStep((prev) => prev + 1);
+    x.set(0);
   }
 
+  function handleDragEnd(_: any, info: { offset: { x: number } }) {
+    if (isIntro) {
+      x.set(0);
+      return;
+    }
+
+    const offsetX = info.offset.x;
+    if (offsetX > 120) {
+      goNext("like");
+    } else if (offsetX < -120) {
+      goNext("skip");
+    } else {
+      x.set(0);
+    }
+  }
+
+  function handleButton(decision: "like" | "skip") {
+    // ako je podcast i "like" → zabranjeno
+    if (currentCard?.comingSoon && decision === "like") return;
+    goNext(decision);
+  }
+
+  // progress: intro = 0%, zadnja kartica = 100%
+  const progressValue =
+    step === 0 ? 0 : ((step) / (totalSteps - 1)) * 100;
+
+  // ---------- RENDERI KARTICA ----------
+
+  function renderIntroCard() {
   return (
-    <Flex
+    <Box
       bg="white"
-      minH="100vh"
-      direction="column"
-      px={{ base: 6, md: 16 }}
-      py={10}
-      align="center"
+      borderRadius="2xl"
+      boxShadow="0 12px 30px rgba(0,0,0,0.10)"
+      p={8}
+      maxW="480px"
+      w="100%"
     >
-      {/* HEADER */}
-      <Flex
-        w="100%"
-        justify="space-between"
-        align="center"
-        mb={8}
-      >
-        <Heading
-          fontWeight="600"
-          fontSize="2xl"
-          cursor="pointer"
-          onClick={() => navigate("/dashboard")}
-        >
-          SIKUM
-        </Heading>
+      <Heading fontSize="2xl" mb={4}>
+        How SIKUM learns your style
+      </Heading>
 
-        <Button
-          variant="ghost"
-          fontSize="sm"
-          color="gray.600"
-          _hover={{ color: "black" }}
-          onClick={() => navigate("/dashboard")}
-        >
-          Back to Dashboard
-        </Button>
-      </Flex>
-
-      {/* TITLE + PROGRESS */}
-      <Box w="100%" maxW="600px" mb={6}>
-        <Heading
-          fontSize="3xl"
-          fontWeight="700"
-          textAlign="left"
-          mb={2}
-        >
-          Rate content from {website}
-        </Heading>
-
-        <Text color="gray.600" mb={3}>
-          Help us learn what matters to you. Swipe through a few
-          example items to train your profile.
-        </Text>
-
-        <Progress
-          value={progressValue}
-          size="sm"
-          borderRadius="full"
-          bg="#A7F3D0"
-          colorScheme="blackAlpha"
-        />
-
-        <Text
-          mt={2}
-          fontSize="sm"
-          color="gray.500"
-        >
-          Card {Math.min(index + 1, total)} of {total}
-        </Text>
+      <Box mb={6}>
+        <Text mb={2}>• Swipe <b>right</b> to keep</Text>
+        <Text mb={2}>• Swipe <b>left</b> to skip</Text>
+        <Text mb={2}>• Podcast & Video formats → <b>coming soon</b></Text>
       </Box>
 
-      {/* CARD STACK AREA */}
-      <Box
-        position="relative"
+      <Button
         w="100%"
-        maxW="600px"
-        h="260px"
-        mt={4}
+        bg="black"
+        color="white"
+        borderRadius="lg"
+        py={6}
+        _hover={{ bg: "gray.800" }}
+        onClick={() => goNext()}
       >
-        {/* NEXT CARD (stack effect) */}
-        {next && (
-          <Box
-            position="absolute"
-            top="20px"
-            left="0"
-            right="0"
-            mx="auto"
-            w="100%"
-            maxW="560px"
-            borderRadius="lg"
-            border="1px solid #E5E5E5"
-            bg="gray.50"
-            boxShadow="0 2px 8px rgba(0,0,0,0.04)"
-            p={6}
-            opacity={0.8}
-            transform="scale(0.96)"
-          >
-            <Heading size="sm" mb={2}>
-              {next.title}
-            </Heading>
-            <Text fontSize="sm" color="gray.500" noOfLines={2}>
-              {next.summary}
-            </Text>
-          </Box>
+        Start
+      </Button>
+    </Box>
+  );
+}
+
+
+  function renderContentCard(card: any) {
+    if (!card) return null;
+
+    // zajednički header (label + title + meta)
+    const metaHeader = (
+      <>
+        <Text fontSize="xs" fontWeight="700" mb={3}>
+          {card.header}
+        </Text>
+
+        {card.title && (
+          <Heading fontSize="xl" mb={2}>
+            {card.title}
+          </Heading>
         )}
 
-        {/* CURRENT CARD – drag + animacije */}
-        <AnimatePresence mode="wait">
-          <MotionBox
-            key={index}
-            position="absolute"
-            top="0"
-            left="0"
-            right="0"
-            mx="auto"
-            w="100%"
-            maxW="600px"
-            bg="white"
-            borderRadius="lg"
-            border="1px solid #E5E5E5"
-            boxShadow="0 4px 12px rgba(0,0,0,0.06)"
-            p={8}
+        {card.source && card.date && (
+          <Text color="gray.500" fontSize="sm" mb={4}>
+            {card.source} • {card.date}
+          </Text>
+        )}
+      </>
+    );
+
+    // svaki format posebno
+    if (card.type === "Tech Bullet Summary") {
+      return (
+        <Box>
+          {metaHeader}
+
+          <Heading fontSize="md" mb={2}>
+            Key Points
+          </Heading>
+          {card.bullets.map((b: string, idx: number) => (
+            <Text key={idx} mb={2}>
+              • {b}
+            </Text>
+          ))}
+
+          <Flex mt={4} align="center" gap={2}>
+            <Text fontWeight="700">Risk Level</Text>
+            <Text fontWeight="700" color="red.500">
+              {card.risk}
+            </Text>
+          </Flex>
+        </Box>
+      );
+    }
+
+    if (card.type === "Story Mode Summary") {
+      return (
+        <Box>
+          {metaHeader}
+
+          <Text mb={6}>{card.text}</Text>
+
+          {card.image && (
+            <Image
+              src={card.image}
+              alt="story illustration"
+              borderRadius="lg"
+              w="100%"
+              objectFit="cover"
+            />
+          )}
+        </Box>
+      );
+    }
+
+    if (card.type === "Deep Structured Brief") {
+      return (
+        <Box>
+          {metaHeader}
+
+          {Object.entries(card.sections).map(([sectionTitle, body]: any) => (
+            <Box key={sectionTitle} mb={5}>
+              <Heading fontSize="md" mb={1}>
+                {sectionTitle}
+              </Heading>
+              <Text>{body}</Text>
+            </Box>
+          ))}
+        </Box>
+      );
+    }
+
+    if (card.type === "Micro Summary") {
+      return (
+        <Box>
+          {metaHeader}
+          <Text>{card.summary}</Text>
+        </Box>
+      );
+    }
+
+    if (card.type === "Podcast") {
+      return (
+        <Box>
+          {metaHeader}
+          <Text mb={6}>
+            In today’s briefing: researchers found a gap in Microsoft Teams guest access that can be abused by attackers.
+          </Text>
+
+          <Box
+            mt={2}
+            p={5}
+            borderRadius="xl"
+            border="1px solid #eee"
+            bg="gray.50"
             textAlign="center"
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragSnapToOrigin
-            onDragEnd={handleDragEnd}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              rotate: 0,
-              transition: { duration: 0.25 },
-            }}
-            exit={{
-              opacity: 0,
-              x: direction === "right" ? 220 : -220,
-              rotate: direction === "right" ? 15 : -15,
-              transition: { duration: 0.3 },
+          >
+            <Text mb={2} fontWeight="600">
+              🎧 Podcast format
+            </Text>
+            <Text fontSize="sm" color="gray.600">
+              Coming soon. You can only skip this card for now.
+            </Text>
+          </Box>
+          {card.image && (
+            <Image
+              src={card.image}
+              alt="story illustration"
+              borderRadius="lg"
+              w="100%"
+              objectFit="cover"
+            />
+          )}
+        </Box>
+      );
+    }
+
+    if (card.type === "Video") {
+      return (
+        <Box>
+          {metaHeader}
+
+          <Text mb={6}>{card.summary}</Text>
+
+          <Box
+            mt={2}
+            p={5}
+            borderRadius="xl"
+            border="1px solid #eee"
+            bg="gray.50"
+            textAlign="center"
+          >
+            <Text mb={2} fontWeight="600">🎥 Video format</Text>
+            <Text fontSize="sm" color="gray.600">
+              Coming soon. You can only skip this card for now.
+            </Text>
+          </Box>
+
+          {card.image && (
+            <Image
+              src={card.image}
+              alt="video-placeholder"
+              borderRadius="lg"
+              w="100%"
+              mt={4}
+            />
+          )}
+        </Box>
+      );
+    }
+
+    return null;
+  }
+
+  // ---------- RENDER ----------
+
+  return (
+    <Flex direction="column" align="center" px={6} py={8} minH="100vh" bg="white">
+      {/* Top bar */}
+      <Flex w="100%" maxW="600px" justify="space-between" mb={4} align="center">
+        <Button variant="ghost" onClick={() => navigate(-1)}>
+          Back
+        </Button>
+
+        <Text fontSize="sm" color="gray.600">
+          {website ? website + ".com" : "Your source"}
+        </Text>
+
+        <Text fontSize="sm" color="gray.600">
+          {Math.min(step + 1, totalSteps)}/{totalSteps}
+        </Text>
+      </Flex>
+
+      <Progress
+        value={progressValue}
+        w="100%"
+        maxW="600px"
+        mb={6}
+        size="sm"
+        borderRadius="full"
+      />
+
+      {/* CARD AREA */}
+      {isIntro ? (
+        renderIntroCard()
+      ) : (
+        <MotionBox
+          bg="white"
+          borderRadius="2xl"
+          boxShadow="0 12px 30px rgba(0,0,0,0.10)"
+          p={7}
+          maxW="480px"
+          w="100%"
+          style={{ x, rotate, opacity: baseOpacity }}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          onDragEnd={handleDragEnd}
+          cursor="grab"
+          position="relative"
+        >
+          {/* KEEP overlay */}
+          <motion.div
+            style={{
+              position: "absolute",
+              top: 16,
+              left: 16,
+              padding: "4px 10px",
+              borderRadius: "999px",
+              border: "2px solid #16a34a",
+              color: "#16a34a",
+              fontSize: 12,
+              fontWeight: 700,
+              opacity: likeOpacity,
             }}
           >
-            <Heading size="md" mb={4}>
-              {current.title}
-            </Heading>
+            KEEP
+          </motion.div>
 
-            <Text color="gray.600" fontSize="md">
-              {current.summary}
-            </Text>
-          </MotionBox>
-        </AnimatePresence>
-      </Box>
+          {/* SKIP overlay */}
+          <motion.div
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              padding: "4px 10px",
+              borderRadius: "999px",
+              border: "2px solid #dc2626",
+              color: "#dc2626",
+              fontSize: 12,
+              fontWeight: 700,
+              opacity: skipOpacity,
+            }}
+          >
+            SKIP
+          </motion.div>
+
+          {renderContentCard(currentCard)}
+        </MotionBox>
+      )}
 
       {/* BUTTONS */}
-      <Flex gap={6} mt={10}>
-        <Button
-          bg="gray.200"
-          color="black"
-          px={10}
-          py={6}
-          borderRadius="lg"
-          fontSize="md"
-          _hover={{ bg: "gray.300" }}
-          onClick={() => goToNext("left")}
-        >
-          Skip
-        </Button>
+      {!isIntro && (
+        <Flex mt={6} gap={4}>
+          <Button
+            variant="outline"
+            borderColor="gray.400"
+            onClick={() => handleButton("skip")}
+          >
+            Skip
+          </Button>
 
-        <Button
-          bg="black"
-          color="white"
-          px={10}
-          py={6}
-          borderRadius="lg"
-          fontSize="md"
-          _hover={{ bg: "gray.800" }}
-          onClick={() => goToNext("right")}
-        >
-          Like
-        </Button>
-      </Flex>
+          <Button
+            bg={currentCard?.comingSoon ? "gray.300" : "black"}
+            color="white"
+            _hover={currentCard?.comingSoon ? undefined : { bg: "gray.800" }}
+            onClick={() => handleButton("like")}
+            disabled={!!currentCard?.comingSoon}
+          >
+            {currentCard?.comingSoon ? "Coming soon" : "Keep"}
+          </Button>
+        </Flex>
+      )}
     </Flex>
   );
 }

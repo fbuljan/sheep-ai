@@ -148,16 +148,16 @@ Minimal Express API with in-memory auth for quick prototyping.
 
 ### ChatGPT & Notification Endpoints
 
-- `POST /chatgpt` — Proxy to OpenAI chat completions.  
-  - Input (JSON body):  
+- `POST /chatgpt` — Proxy to OpenAI chat completions.
+  - Input (JSON body):
     ```json
     {
       "messages": [
         { "role": "user", "content": "Say hi to Sheep AI." }
       ]
     }
-    ```  
-  - Output: `200` with the generated text and usage details, e.g.:  
+    ```
+  - Output: `200` with the generated text and usage details, e.g.:
     ```json
     {
       "content": "Hello from Sheep AI!",
@@ -167,8 +167,30 @@ Minimal Express API with in-memory auth for quick prototyping.
         "total_tokens": 16
       }
     }
-    ```  
+    ```
   - Errors: `400` if `messages` is missing/empty, `500` if the OpenAI request fails. Requires `OPENAI_API_KEY` in the environment.
+
+- `POST /chatgpt/article-summary` — Generate a summary of an article in the specified display type format.
+  - Input (JSON body):
+    ```json
+    {
+      "articleId": 1,
+      "displayTypeId": "micro_summary"
+    }
+    ```
+  - Output: `200` with the generated summary:
+    ```json
+    {
+      "content": "Generated summary text...",
+      "displayType": "Micro Summary",
+      "articleId": 1
+    }
+    ```
+  - Behavior:
+    - Fetches the article from the database and uses OpenAI with web search to read the full article content from the URL.
+    - Generates a summary according to the display type's prompt template.
+    - For non-textual display types (`video_reel_script`, `podcast_snippet`), returns `"COMING SOON!"` as content.
+  - Errors: `400` if `articleId` or `displayTypeId` is missing/invalid, `404` if article not found, `500` if OpenAI request fails.
 
 - `GET /notifications/types` — Get all available notification types.
   - Input: none.
@@ -339,3 +361,55 @@ Minimal Express API with in-memory auth for quick prototyping.
     - If categories already exist for the source, returns them from the database.
     - If no categories exist, generates them using OpenAI by analyzing all articles for that source, saves them to the database, and returns them with article-to-category mappings.
   - Note: `articleCategories` maps article IDs to their assigned categories. This is only populated when categories are freshly generated.
+
+### Display types
+
+- `GET /display-types` — Get all available display types for article summaries.
+  - Input: none.
+  - Output: `200` with array of display types:
+    ```json
+    [
+      {
+        "id": "micro_summary",
+        "name": "Micro Summary",
+        "format": "Ultra-compressed, one-sentence summary",
+        "purpose": "Used in the feed; fastest way to decide if you want to open the article"
+      },
+      {
+        "id": "tech_bullets",
+        "name": "Tech Bullets",
+        "format": "Short, precise bullet points (3-5 key points)",
+        "purpose": "Best for technical readers (devs, secops, analysts)"
+      }
+      // ... more types
+    ]
+    ```
+
+- `POST /display-types/preferences` — Save user's preferred display types.
+  - Input (JSON body):
+    ```json
+    {
+      "userId": 1,
+      "displayTypeIds": ["micro_summary", "tech_bullets", "executive_summary"]
+    }
+    ```
+  - Output: `200` with success message:
+    ```json
+    { "message": "Preferences saved successfully" }
+    ```
+  - Errors: `400` if `userId` or `displayTypeIds` is invalid, `404` if user not found.
+
+- `GET /display-types/preferences/:userId` — Get user's preferred display types as full objects.
+  - Input: `userId` as URL parameter.
+  - Output: `200` with array of display type objects the user has selected:
+    ```json
+    [
+      {
+        "id": "micro_summary",
+        "name": "Micro Summary",
+        "format": "Ultra-compressed, one-sentence summary",
+        "purpose": "Used in the feed; fastest way to decide if you want to open the article"
+      }
+    ]
+    ```
+  - Errors: `400` if `userId` is invalid, `404` if user not found.

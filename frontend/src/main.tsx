@@ -11,6 +11,7 @@ import CategorySelect from "./pages/CategorySelect";
 import WebsitePreferences from "./pages/WebsitePreferences";
 import Swipe from "./pages/Swipe";
 import Settings from "./pages/Settings";
+import AddWebsite from "./pages/AddWebsite";
 
 const router = createBrowserRouter([
   { path: "/", element: <Landing /> },
@@ -20,6 +21,7 @@ const router = createBrowserRouter([
   { path: "/categories", element: <CategorySelect /> },
   { path: "/website-preferences", element: <WebsitePreferences /> },
   { path: "/swipe", element: <Swipe /> },
+  { path: "/add-website", element: <AddWebsite /> },
   { path: "/settings", element: <Settings /> }
 ]);
 

@@ -5,98 +5,132 @@ import {
   Text,
   Button,
   SimpleGrid,
-  Input,
+  Spinner,
+  Alert,
+  AlertIcon,
+  useToast,
 } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import axios from "axios";
-
-const ALL_CATEGORIES = [
-  "Malware",
-  "Phishing",
-  "Data Breaches",
-  "Ransomware",
-  "AI Agents",
-  "Zero-Day",
-  "Vulnerabilities",
-  "Botnets",
-  "Cloud Security",
-  "Mobile Threats",
-  "Insider Threats",
-];
+import { fetchCategories } from "../api/categories";
 
 export default function CategorySelect() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const toast = useToast();
 
-  const [website, setWebsite] = useState("");
+  const website: string = location.state?.website;
+
+  const [categories, setCategories] = useState<string[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
-  const [step, setStep] = useState(1); // 1 = enter website, 2 = categories
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function validateWebsite() {
-    setError("");
-
-    if (!website.trim()) {
-      setError("Please enter a website.");
-      return;
+  // ➤ Ako nema website → odmah redirect
+  useEffect(() => {
+    if (!website || website.trim() === "") {
+      navigate("/add-website");
     }
+  }, [website, navigate]);
 
-    const clean = website
-      .replace("https://", "")
+  // ➤ Normalizacija website imena (uklanja http, www)
+  const displayName =
+    website
+      ?.replace("https://", "")
       .replace("http://", "")
-      .split("/")[0];
+      .replace("www.", "") || "";
 
-    if (!clean.includes(".")) {
-      setError("Please enter a valid domain (e.g. example.com).");
-      return;
-    }
+  // Load categories from backend
+  useEffect(() => {
+    if (!website) return;
 
-    setWebsite(clean);
+    async function load() {
+      try {
+        setLoading(true);
 
-    // Save preferred website to backend
-    try {
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        const currentWebsites = user.preferredWebsites || [];
+        const res = await fetchCategories(website);
+        console.log("Backend categories:", res);
 
-        // Only add if not already in the list
-        if (!currentWebsites.includes(clean)) {
-          const updatedWebsites = [...currentWebsites, clean];
-
-          const response = await axios.put(
-            `http://localhost:4000/users/${user.id}/preferred-websites`,
-            { preferredWebsites: updatedWebsites }
-          );
-
-          // Update local storage with new user data
-          const updatedUser = { ...user, preferredWebsites: updatedWebsites };
-          localStorage.setItem("user", JSON.stringify(updatedUser));
-        }
+        const names = res.categories.categories.map((c: any) => c.name);
+        setCategories(names);
+      } catch (err) {
+        console.error(err);
+        setError("Could not load categories for this source.");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Error saving preferred website:", err);
-      // Continue anyway - don't block the user
     }
 
-    setStep(2);
-  }
+    load();
+  }, [website]);
 
   function toggle(cat: string) {
-    if (selected.includes(cat)) {
-      setSelected(selected.filter((c) => c !== cat));
-    } else {
-      setSelected([...selected, cat]);
-    }
+    setSelected((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
   }
 
-  function next() {
-    navigate("/swipe", {
-      state: {
-        website,
-        categories: selected,
-      },
-    });
+  // ➤ Save preferences
+  async function next() {
+    try {
+      setSaving(true);
+
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const token = localStorage.getItem("token");
+      const userId = user?.id;
+
+      if (!userId || !token) {
+        toast({
+          title: "Not logged in",
+          description: "Please sign in again.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        navigate("/login");
+        return;
+      }
+
+      // LOCAL STORAGE UPDATE
+      const localPrefs = JSON.parse(
+        localStorage.getItem("websitePreferences") || "{}"
+      );
+      localPrefs[website] = { categories: selected };
+      localStorage.setItem("websitePreferences", JSON.stringify(localPrefs));
+
+      // BACKEND UPDATE (backend requires an array of websites, not object)
+      const websiteArray = Object.keys(localPrefs); // ← FIX
+
+      await axios.put(
+        `http://localhost:4000/users/${userId}/preferred-websites`,
+        { preferredWebsites: websiteArray },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      toast({
+        title: "Preferences saved!",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+
+      navigate("/swipe", {
+        state: { website, categories: selected },
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error saving preferences",
+        description: "Please try again.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -111,7 +145,7 @@ export default function CategorySelect() {
       {/* HEADER */}
       <Flex w="100%" justify="space-between" align="center" mb={12}>
         <Heading
-          fontWeight="600"
+          fontWeight="700"
           fontSize="2xl"
           cursor="pointer"
           onClick={() => navigate("/dashboard")}
@@ -119,86 +153,70 @@ export default function CategorySelect() {
           SIKUM
         </Heading>
 
-        <Button
-          variant="ghost"
-          color="gray.600"
-          onClick={() => navigate("/dashboard")}
-        >
+        <Button variant="ghost" color="gray.600" onClick={() => navigate("/dashboard")}>
           Cancel
         </Button>
       </Flex>
 
-      {/* STEP 1 — ENTER WEBSITE */}
-      {step === 1 && (
-        <>
-          <Heading fontSize="3xl" mb={4}>
-            Add a Website
-          </Heading>
-          <Text color="gray.600" mb={8} textAlign="center" maxW="600px">
-            Enter the website you want to train your personal brief on.
+      {/* PAGE TITLE */}
+      <Heading fontSize="3xl" mb={3} fontWeight="700">
+        What topics interest you?
+      </Heading>
+
+      <Text color="gray.600" mb={10} maxW="600px" textAlign="center" fontSize="md">
+        These categories were detected based on articles from{" "}
+        <b>{displayName}</b>.
+      </Text>
+
+      {/* LOADING */}
+      {loading && (
+        <Flex direction="column" align="center" mt={20}>
+          <Spinner size="xl" thickness="5px" color="black" />
+          <Text mt={6} fontSize="lg">
+            Analyzing articles…
           </Text>
-
-          <Box w="100%" maxW="500px" mb={4}>
-            <Input
-              placeholder="example.com"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              border="2px solid #E5E5E5"
-              borderRadius="lg"
-              p={6}
-            />
-          </Box>
-
-          {error && <Text color="red.500" mb={4}>{error}</Text>}
-
-          <Button
-            bg="black"
-            color="white"
-            px={10}
-            py={6}
-            borderRadius="lg"
-            onClick={validateWebsite}
-          >
-            Continue
-          </Button>
-        </>
+        </Flex>
       )}
 
-      {/* STEP 2 — CATEGORY SELECTION */}
-      {step === 2 && (
-        <>
-          <Heading fontSize="3xl" mb={4}>
-            What topics interest you?
-          </Heading>
-          <Text color="gray.600" mb={10} textAlign="center" maxW="600px">
-            These will be used to personalize your content from {website}.
-          </Text>
+      {/* ERROR */}
+      {error && !loading && (
+        <Alert status="error" mb={6} borderRadius="lg">
+          <AlertIcon />
+          {error}
+        </Alert>
+      )}
 
+      {/* CATEGORY GRID */}
+      {!loading && categories.length > 0 && (
+        <>
           <SimpleGrid
-            columns={{ base: 2, md: 3, lg: 4 }}
-            spacing={4}
+            columns={{ base: 1, sm: 2, md: 2, lg: 3 }}
+            spacing={5}
             maxW="800px"
             mb={12}
+            w="100%"
           >
-            {ALL_CATEGORIES.map((cat) => {
+            {categories.map((cat) => {
               const active = selected.includes(cat);
               return (
                 <Box
                   key={cat}
                   border="2px solid"
-                  borderColor={active ? "black" : "#E5E5E5"}
+                  borderColor={active ? "black" : "#E4E4E4"}
                   bg={active ? "black" : "white"}
                   color={active ? "white" : "black"}
                   borderRadius="full"
-                  px={5}
-                  py={3}
+                  px={7}
+                  py={4}
+                  fontSize="md"
+                  fontWeight="500"
                   textAlign="center"
                   cursor="pointer"
                   onClick={() => toggle(cat)}
-                  transition="0.2s"
+                  transition="0.2s ease"
                   _hover={{
-                    transform: "translateY(-2px)",
-                    boxShadow: "0 4px 8px rgba(0,0,0,0.06)",
+                    transform: "translateY(-3px)",
+                    boxShadow: "0 10px 20px rgba(0,0,0,0.08)",
                   }}
                 >
                   {cat}
@@ -207,17 +225,22 @@ export default function CategorySelect() {
             })}
           </SimpleGrid>
 
+          {/* CONTINUE BUTTON */}
           <Button
             bg="black"
             color="white"
-            px={10}
-            py={6}
-            borderRadius="lg"
+            px={12}
+            py={7}
+            borderRadius="xl"
+            fontSize="lg"
+            fontWeight="600"
             onClick={next}
-            disabled={selected.length === 0}
+            disabled={selected.length === 0 || saving}
+            _hover={{ bg: "gray.800" }}
           >
-            Continue to Swipe
+            {saving ? <Spinner color="white" /> : "Continue to Swipe"}
           </Button>
+
         </>
       )}
     </Flex>
