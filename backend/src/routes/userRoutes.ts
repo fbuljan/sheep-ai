@@ -17,3 +17,6 @@ userRouter.put('/:id/categories/:source', (req, res) => userController.setSource
 
 // GET /users/:id/categories/:source
 userRouter.get('/:id/categories/:source', (req, res) => userController.getSourceCategories(req, res));
+
+// GET /users/:id/articles/:source
+userRouter.get('/:id/articles/:source', (req, res) => userController.getArticlesByPreferredCategories(req, res));

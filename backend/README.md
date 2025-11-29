@@ -289,6 +289,34 @@ Minimal Express API with in-memory auth for quick prototyping.
     ```
   - Note: Returns empty `categories` array if no preferences are set for that source.
 
+- `GET /users/:id/articles/:source` — Get articles filtered by user's preferred categories for a source.
+  - Input: `id` and `source` path parameters.
+  - Query parameters (optional):
+    - `limit` — Maximum number of articles to return (e.g., `?limit=10`)
+  - Output: `200` with filtered articles:
+    ```json
+    {
+      "success": true,
+      "count": 5,
+      "preferredCategories": ["Cybersecurity", "Data Breach"],
+      "articles": [
+        {
+          "id": 1,
+          "url": "https://example.com/article",
+          "scrapedAt": "2025-11-29T10:00:00.000Z",
+          "source": "thehackernews",
+          "data": {
+            "title": "Article Title",
+            "summary": "Article summary..."
+          },
+          "categories": ["Cybersecurity", "Malware"]
+        }
+      ]
+    }
+    ```
+  - Behavior: Returns only articles from the specified source that have at least one category matching the user's preferred categories.
+  - Note: Returns empty `articles` array if user has no preferred categories set for this source.
+
 ### Category Endpoints
 
 - `GET /categories/:source` — Get categories for a specific source.

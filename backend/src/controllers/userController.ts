@@ -109,6 +109,29 @@ export class UserController {
       return res.status(500).json({ message: err.message ?? 'Failed to get source categories' });
     }
   }
+
+  async getArticlesByPreferredCategories(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+
+      const { source } = req.params;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+
+      const result = await userService.getArticlesByPreferredCategories(id, source, limit);
+
+      return res.status(200).json({
+        success: true,
+        count: result.articles.length,
+        preferredCategories: result.preferredCategories,
+        articles: result.articles,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ message: err.message ?? 'Failed to get articles' });
+    }
+  }
 }
 
 export const userController = new UserController();

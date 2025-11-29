@@ -121,4 +121,46 @@ export class UserService {
 
     return sourceCategories.find((sc) => sc.source === source) || null;
   }
+
+  async getArticlesByPreferredCategories(userId: number, source: string, limit?: number) {
+    // Get user's preferred categories for this source
+    const preference = await this.getSourceCategories(userId, source);
+
+    if (!preference || preference.categories.length === 0) {
+      return { articles: [], preferredCategories: [] };
+    }
+
+    // Get all articles from this source that have categories assigned
+    const articles = await prisma.article.findMany({
+      where: {
+        source,
+        NOT: { categories: { equals: Prisma.DbNull } },
+      },
+      orderBy: { scrapedAt: 'desc' },
+    });
+
+    // Filter articles that have at least one matching category
+    const filteredArticles = articles.filter((article) => {
+      const articleCategories = article.categories as unknown as string[];
+      if (!articleCategories || !Array.isArray(articleCategories)) {
+        return false;
+      }
+      return articleCategories.some((cat) => preference.categories.includes(cat));
+    });
+
+    // Apply limit if provided
+    const limitedArticles = limit ? filteredArticles.slice(0, limit) : filteredArticles;
+
+    return {
+      articles: limitedArticles.map((article) => ({
+        id: article.id,
+        url: article.url,
+        scrapedAt: article.scrapedAt,
+        source: article.source,
+        data: article.data,
+        categories: article.categories,
+      })),
+      preferredCategories: preference.categories,
+    };
+  }
 }
