@@ -9,37 +9,48 @@ import {
   Button,
   VStack,
 } from "@chakra-ui/react";
-import { loginUser } from "../api/auth";
+import { registerUser } from "../api/auth";
 
-import { useEffect } from "react";
-
-export default function Login() {
+export default function Register() {
   const navigate = useNavigate();
 
-    useEffect(() => {
-    if (localStorage.getItem("token")) {
-        navigate("/dashboard");
-    }
-    }, []);
-
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  async function handleLogin() {
+  async function handleRegister() {
+    setError("");
+
+    // Simple validation
+    if (name.trim().length < 3) {
+      setError("Name must have at least 3 characters");
+      return;
+    }
+    if (!email.includes("@")) {
+      setError("Invalid email address");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
     try {
       setLoading(true);
-      setError("");
 
-      const res = await loginUser({ email, password });
+      await registerUser({
+        name,
+        email,
+        password,
+        preferredWebsites: [] // minimalno dok ne napravimo swipe
+      });
 
-      // Save token + redirect
-      localStorage.setItem("token", res.token);
-      navigate("/dashboard");
+      navigate("/");
     } catch (err: any) {
-      setError("Invalid email or password");
+      setError(err.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -63,7 +74,6 @@ export default function Login() {
         w="full"
         maxW="sm"
       >
-        {/* Logo */}
         <Flex direction="column" align="center" mb={8}>
           <Box
             fontSize="3xl"
@@ -80,45 +90,39 @@ export default function Login() {
           </Box>
 
           <Heading mt={6} color="white" fontSize="3xl" fontWeight="semibold">
-            Sign in
+            Create account
           </Heading>
-
-          <Text color="gray.400" fontSize="sm">
-            Welcome back to SheepAI
-          </Text>
         </Flex>
 
-        {/* Form */}
         <VStack spacing={5}>
           <Box w="full">
-            <Text color="gray.300" mb={1} fontSize="sm">
-              Email
-            </Text>
+            <Text color="gray.300" mb={1} fontSize="sm">Name</Text>
             <Input
-              type="email"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               bg="whiteAlpha.100"
-              border="1px solid rgba(255,255,255,0.1)"
               color="white"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              _placeholder={{ color: "gray.500" }}
-              placeholder="you@example.com"
             />
           </Box>
 
           <Box w="full">
-            <Text color="gray.300" mb={1} fontSize="sm">
-              Password
-            </Text>
+            <Text color="gray.300" mb={1} fontSize="sm">Email</Text>
+            <Input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              bg="whiteAlpha.100"
+              color="white"
+            />
+          </Box>
+
+          <Box w="full">
+            <Text color="gray.300" mb={1} fontSize="sm">Password</Text>
             <Input
               type="password"
-              bg="whiteAlpha.100"
-              border="1px solid rgba(255,255,255,0.1)"
-              color="white"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              _placeholder={{ color: "gray.500" }}
-              placeholder="••••••••"
+              bg="whiteAlpha.100"
+              color="white"
             />
           </Box>
 
@@ -129,20 +133,15 @@ export default function Login() {
             py={6}
             color="white"
             bgGradient="linear(to-r, purple.500, indigo.600)"
-            _hover={{ opacity: 0.9 }}
-            borderRadius="xl"
-            shadow="xl"
-            onClick={handleLogin}
             isLoading={loading}
+            onClick={handleRegister}
           >
-            Continue
+            Create account
           </Button>
 
           <Text color="gray.400" fontSize="sm">
-            Don’t have an account?{" "}
-            <a href="/register" style={{ color: "#818CF8" }}>
-              Create one
-            </a>
+            Already have an account?{" "}
+            <a href="/" style={{ color: "#818CF8" }}>Sign in</a>
           </Text>
         </VStack>
       </Box>
