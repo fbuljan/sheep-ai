@@ -74,6 +74,7 @@ export class ChatGptController {
 
       return res.status(200).json({
         content: result.content,
+        estimatedReadTime: result.estimatedReadTime,
         displayType: displayType.name,
         articleId,
       });

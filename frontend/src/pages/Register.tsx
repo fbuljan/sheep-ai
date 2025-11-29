@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import axios from "axios";
 import { API_URL } from "../config/api";
+import { Logo } from "../components/Logo";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -141,8 +142,8 @@ export default function Register() {
       py={10}
       align="center"
     >
-      <Flex w="100%" justify="space-between" mb={12}>
-        <Heading fontSize="2xl">SIKUM</Heading>
+      <Flex w="100%" justify="space-between" align="center" mb={12}>
+        <Logo />
         <Button variant="ghost" onClick={() => navigate("/")}>Cancel</Button>
       </Flex>
 

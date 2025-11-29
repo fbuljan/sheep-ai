@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { API_URL } from "../config/api";
+import { Logo } from "../components/Logo";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -130,8 +131,8 @@ export default function Settings() {
       align="center"
     >
       {/* HEADER */}
-      <Flex w="100%" justify="space-between" mb={10}>
-        <Heading fontSize="2xl">SIKUM</Heading>
+      <Flex w="100%" justify="space-between" align="center" mb={10}>
+        <Logo />
         <Button variant="ghost" onClick={() => navigate("/dashboard")}>
           Back
         </Button>

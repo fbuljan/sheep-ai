@@ -182,6 +182,7 @@ Minimal Express API with in-memory auth for quick prototyping.
     ```json
     {
       "content": "Generated summary text...",
+      "estimatedReadTime": "5 mins",
       "displayType": "Micro Summary",
       "articleId": 1
     }
@@ -189,6 +190,7 @@ Minimal Express API with in-memory auth for quick prototyping.
   - Behavior:
     - Fetches the article from the database and uses OpenAI with web search to read the full article content from the URL.
     - Generates a summary according to the display type's prompt template.
+    - Estimates the read time for the original article (format: "X mins").
     - For non-textual display types (`video_reel_script`, `podcast_snippet`), returns `"COMING SOON!"` as content.
   - Errors: `400` if `articleId` or `displayTypeId` is missing/invalid, `404` if article not found, `500` if OpenAI request fails.
 

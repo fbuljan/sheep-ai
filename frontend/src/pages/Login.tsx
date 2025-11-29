@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import axios from "axios";
 import { API_URL } from "../config/api";
+import { Logo } from "../components/Logo";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -72,12 +73,8 @@ export default function Login() {
         position="absolute"
         top="30px"
         left="30px"
-        fontSize="2xl"
-        fontWeight="bold"
-        cursor="pointer"
-        onClick={() => navigate("/")}
       >
-        SIKUM
+        <Logo navigateTo="/" />
       </Flex>
 
       {/* Container */}

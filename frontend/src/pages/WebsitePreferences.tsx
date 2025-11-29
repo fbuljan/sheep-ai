@@ -11,6 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
+import { Logo } from "../components/Logo";
 
 export default function WebsitePreferences() {
   const navigate = useNavigate();
@@ -56,14 +57,7 @@ export default function WebsitePreferences() {
     >
       {/* HEADER */}
       <Flex w="100%" justify="space-between" align="center" mb={12}>
-        <Heading
-          fontWeight="600"
-          fontSize="2xl"
-          cursor="pointer"
-          onClick={() => navigate("/dashboard")}
-        >
-          SIKUM
-        </Heading>
+        <Logo navigateTo="/dashboard" />
 
         <Button variant="ghost" onClick={() => navigate("/dashboard")}>
           Cancel
