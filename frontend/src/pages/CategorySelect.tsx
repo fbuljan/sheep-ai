@@ -29,14 +29,14 @@ export default function CategorySelect() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // ➤ Ako nema website → odmah redirect
+  // Ako nema website, odmah redirect
   useEffect(() => {
     if (!website || website.trim() === "") {
       navigate("/add-website");
     }
   }, [website, navigate]);
 
-  // ➤ Normalizacija website imena (uklanja http, www)
+  // Normalizacija website imena (uklanja http, www)
   const displayName =
     website
       ?.replace("https://", "")
@@ -73,7 +73,7 @@ export default function CategorySelect() {
     );
   }
 
-  // ➤ Save preferences
+  // Save preferences
   async function next() {
     try {
       setSaving(true);
@@ -102,7 +102,7 @@ export default function CategorySelect() {
       localStorage.setItem("websitePreferences", JSON.stringify(localPrefs));
 
       // BACKEND UPDATE (backend requires an array of websites, not object)
-      const websiteArray = Object.keys(localPrefs); // ← FIX
+      const websiteArray = Object.keys(localPrefs); 
 
       await axios.put(
         `${API_URL}/users/${userId}/preferred-websites`,

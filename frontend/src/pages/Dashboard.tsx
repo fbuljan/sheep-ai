@@ -59,7 +59,7 @@ export default function Dashboard() {
   }
 
   function openWebsite(domain: string) {
-    navigate("/swipe", {
+    navigate("/feed", {
       state: { website: domain },
     });
   }

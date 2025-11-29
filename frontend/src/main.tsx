@@ -12,6 +12,7 @@ import WebsitePreferences from "./pages/WebsitePreferences";
 import Swipe from "./pages/Swipe";
 import Settings from "./pages/Settings";
 import AddWebsite from "./pages/AddWebsite";
+import Feed from "./pages/Feed";
 
 const router = createBrowserRouter([
   { path: "/", element: <Landing /> },
@@ -22,7 +23,8 @@ const router = createBrowserRouter([
   { path: "/website-preferences", element: <WebsitePreferences /> },
   { path: "/swipe", element: <Swipe /> },
   { path: "/add-website", element: <AddWebsite /> },
-  { path: "/settings", element: <Settings /> }
+  { path: "/settings", element: <Settings /> },
+  { path: "/feed", element: <Feed /> }
 ]);
 
 createRoot(document.getElementById("root")!).render(

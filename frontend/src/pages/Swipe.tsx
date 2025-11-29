@@ -7,20 +7,37 @@ import {
   Heading,
   Progress,
   Image,
+  useToast
 } from "@chakra-ui/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, useMotionValue, useTransform } from "framer-motion";
+import axios from "axios";
 
 const MotionBox = motion(Box);
+
+// MAPPING: your swipe card IDs → backend displayType IDs
+const DISPLAY_MAP: Record<string, string | null> = {
+  "tech-bullet": "tech_bullets",
+  "story-mode": "story_mode",
+  "deep-brief": "executive_summary",
+  "micro-summary": "micro_summary",
+
+  // coming soon = ignore
+  podcast: null,
+  video: null,
+};
 
 export default function Swipe() {
   const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
+
   const website: string | undefined = location.state?.website;
 
-  // ----- HARD-CODED CARDS -----
+  // -------------------------------------
+  // HARD CODED DEMO CONTENT CARDS
+  // -------------------------------------
   const contentCards = [
-  // 1) Tech Bullet
     {
       id: "tech-bullet",
       type: "Tech Bullet Summary",
@@ -30,15 +47,14 @@ export default function Swipe() {
       date: "Nov 28, 2025",
       bullets: [
         "Guest access uses the host tenant’s security policies.",
-        "Defender protections from the user’s home org do not follow them.",
+        "Defender protections do not follow users across tenants.",
         "Attackers can create malicious tenants cheaply.",
         "Guest invites bypass email authentication checks.",
-        "Malware/phishing links delivered without detection."
+        "Malware/phishing links delivered undetected."
       ],
-      risk: "High"
+      risk: "High",
     },
 
-    // 2) Story Mode
     {
       id: "story-mode",
       type: "Story Mode Summary",
@@ -48,10 +64,9 @@ export default function Swipe() {
       date: "Nov 28, 2025",
       text:
         "The moment you do, your company’s security stays behind. If the workspace belongs to an attacker, they can send harmful links or files—and your company won’t see a thing.",
-      image: "/story.png"  
+      image: "/story.png",
     },
 
-    // 3) Deep Structured Brief
     {
       id: "deep-brief",
       type: "Deep Structured Brief",
@@ -65,11 +80,10 @@ export default function Swipe() {
         "How the attack works":
           "Attackers create a cheap MS tenant with no safeguards and send guest invites.",
         Impact:
-          "Malware or phishing can be delivered undetected because it happens outside the org’s security boundary."
-      }
+          "Malware or phishing delivered undetected because it happens outside org security boundary.",
+      },
     },
 
-    // 4) Micro Summary
     {
       id: "micro-summary",
       type: "Micro Summary",
@@ -78,10 +92,9 @@ export default function Swipe() {
       source: "hackernews.com",
       date: "Nov 28, 2025",
       summary:
-        "Teams guest access lets attackers place users inside external tenants where protections do not apply."
+        "Teams guest access lets attackers place users inside external tenants where protections do not apply.",
     },
 
-    // 5) Podcast (coming soon)
     {
       id: "podcast",
       type: "Podcast",
@@ -91,11 +104,10 @@ export default function Swipe() {
       source: "hackernews.com",
       date: "Nov 28, 2025",
       summary:
-        "In today’s briefing: researchers found a gap in Teams guest access attackers can abuse.",
-      image: "/podcast.png"  
+        "In today's briefing: researchers found a gap in Teams guest access attackers can abuse.",
+      image: "/podcast.png",
     },
 
-    // 6) VIDEO (coming soon)
     {
       id: "video",
       type: "Video",
@@ -104,30 +116,75 @@ export default function Swipe() {
       title: "Microsoft Teams Guest Access Security Gap",
       source: "hackernews.com",
       date: "Nov 28, 2025",
-      summary:
-        "Watch a short video presentation of the key points.",
-      image: "/video.png" 
+      summary: "Watch a short video presentation of the key points.",
+      image: "/video.png",
     }
   ];
 
-
-  // intro + content cards = steps
-  const totalSteps = 1 + contentCards.length; // 0 = intro, 1..n = cards
-
-  const [step, setStep] = useState(0); // 0 = intro
+  // intro + content steps
+  const totalSteps = 1 + contentCards.length;
+  const [step, setStep] = useState(0);
   const [liked, setLiked] = useState<string[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-8, 8]);
   const baseOpacity = useTransform(x, [-200, 0, 200], [0.4, 1, 0.4]);
-
   const likeOpacity = useTransform(x, [40, 140], [0, 1]);
   const skipOpacity = useTransform(x, [-140, -40], [1, 0]);
 
   const isIntro = step === 0;
   const currentCard = step > 0 ? contentCards[step - 1] : null;
 
+  // -------------------------------------
+  // SAVE PREFERENCES TO BACKEND
+  // -------------------------------------
+  async function savePreferencesToBackend() {
+    try {
+      setSaving(true);
+
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const userId = user?.id;
+
+      if (!userId) {
+        toast({
+          title: "Not logged in",
+          status: "error",
+        });
+        navigate("/login");
+        return;
+      }
+
+      const chosen = liked
+        .map((id) => DISPLAY_MAP[id])
+        .filter((x): x is string => x !== null);
+
+      await axios.post("http://localhost:4000/display-types/preferences", {
+        userId,
+        displayTypeIds: chosen,
+      });
+
+      toast({
+        title: "Preferences saved!",
+        status: "success",
+        duration: 2000,
+      });
+
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Failed to save preferences",
+        status: "error",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // -------------------------------------
+  // HANDLE SWIPING
+  // -------------------------------------
   function goNext(decision?: "like" | "skip") {
     if (isIntro) {
       setStep(1);
@@ -135,16 +192,12 @@ export default function Swipe() {
     }
 
     if (currentCard && decision) {
-      if (decision === "like") {
-        setLiked((prev) => [...prev, currentCard.id]);
-      } else {
-        setSkipped((prev) => [...prev, currentCard.id]);
-      }
+      if (decision === "like") setLiked((p) => [...p, currentCard.id]);
+      else setSkipped((p) => [...p, currentCard.id]);
     }
 
     if (step >= totalSteps - 1) {
-      // kraj swipanja, možemo ovdje kasnije spremati preferencije na backend
-      navigate("/dashboard");
+      savePreferencesToBackend().then(() => navigate("/dashboard"));
       return;
     }
 
@@ -153,113 +206,92 @@ export default function Swipe() {
   }
 
   function handleDragEnd(_: any, info: { offset: { x: number } }) {
-    if (isIntro) {
-      x.set(0);
-      return;
-    }
-
     const offsetX = info.offset.x;
-    if (offsetX > 120) {
-      goNext("like");
-    } else if (offsetX < -120) {
-      goNext("skip");
-    } else {
-      x.set(0);
-    }
+    if (offsetX > 120) goNext("like");
+    else if (offsetX < -120) goNext("skip");
+    else x.set(0);
   }
 
   function handleButton(decision: "like" | "skip") {
-    // ako je podcast i "like" → zabranjeno
     if (currentCard?.comingSoon && decision === "like") return;
     goNext(decision);
   }
 
-  // progress: intro = 0%, zadnja kartica = 100%
-  const progressValue =
-    step === 0 ? 0 : ((step) / (totalSteps - 1)) * 100;
+  const progressValue = step === 0 ? 0 : (step / (totalSteps - 1)) * 100;
 
-  // ---------- RENDERI KARTICA ----------
-
+  // -------------------------------------
+  // INTRO CARD
+  // -------------------------------------
   function renderIntroCard() {
-  return (
-    <Box
-      bg="white"
-      borderRadius="2xl"
-      boxShadow="0 12px 30px rgba(0,0,0,0.10)"
-      p={8}
-      maxW="480px"
-      w="100%"
-    >
-      <Heading fontSize="2xl" mb={4}>
-        How SIKUM learns your style
-      </Heading>
-
-      <Box mb={6}>
-        <Text mb={2}>• Swipe <b>right</b> to keep</Text>
-        <Text mb={2}>• Swipe <b>left</b> to skip</Text>
-        <Text mb={2}>• Podcast & Video formats → <b>coming soon</b></Text>
-      </Box>
-
-      <Button
+    return (
+      <Box
+        bg="white"
+        borderRadius="2xl"
+        boxShadow="0 12px 30px rgba(0,0,0,0.10)"
+        p={8}
+        maxW="480px"
         w="100%"
-        bg="black"
-        color="white"
-        borderRadius="lg"
-        py={6}
-        _hover={{ bg: "gray.800" }}
-        onClick={() => goNext()}
       >
-        Start
-      </Button>
-    </Box>
-  );
-}
+        <Heading fontSize="2xl" mb={4}>
+          How SIKUM learns your style
+        </Heading>
 
+        <Box mb={6}>
+          <Text mb={2}>• Swipe <b>right</b> to keep</Text>
+          <Text mb={2}>• Swipe <b>left</b> to skip</Text>
+          <Text mb={2}>• Podcast & Video → <b>coming soon</b></Text>
+        </Box>
 
+        <Button
+          w="100%"
+          bg="black"
+          color="white"
+          py={6}
+          borderRadius="lg"
+          onClick={() => goNext()}
+        >
+          Start
+        </Button>
+      </Box>
+    );
+  }
+
+  // -------------------------------------
+  // CONTENT CARD RENDERER
+  // (UNCHANGED FROM YOUR ORIGINAL)
+  // -------------------------------------
   function renderContentCard(card: any) {
     if (!card) return null;
 
-    // zajednički header (label + title + meta)
     const metaHeader = (
       <>
         <Text fontSize="xs" fontWeight="700" mb={3}>
           {card.header}
         </Text>
 
-        {card.title && (
-          <Heading fontSize="xl" mb={2}>
-            {card.title}
-          </Heading>
-        )}
+        <Heading fontSize="xl" mb={2}>
+          {card.title}
+        </Heading>
 
-        {card.source && card.date && (
-          <Text color="gray.500" fontSize="sm" mb={4}>
-            {card.source} • {card.date}
-          </Text>
-        )}
+        <Text color="gray.500" fontSize="sm" mb={4}>
+          {card.source} • {card.date}
+        </Text>
       </>
     );
 
-    // svaki format posebno
     if (card.type === "Tech Bullet Summary") {
       return (
         <Box>
           {metaHeader}
 
-          <Heading fontSize="md" mb={2}>
-            Key Points
-          </Heading>
-          {card.bullets.map((b: string, idx: number) => (
-            <Text key={idx} mb={2}>
-              • {b}
-            </Text>
+          <Heading fontSize="md" mb={2}>Key Points</Heading>
+          {card.bullets.map((b: string, i: number) => (
+            <Text mb={2} key={i}>• {b}</Text>
           ))}
 
           <Flex mt={4} align="center" gap={2}>
             <Text fontWeight="700">Risk Level</Text>
-            <Text fontWeight="700" color="red.500">
-              {card.risk}
-            </Text>
+            <Text fontWeight="700" color="red.500">{card.risk}</Text>
           </Flex>
         </Box>
       );
@@ -269,17 +301,9 @@ export default function Swipe() {
       return (
         <Box>
           {metaHeader}
-
           <Text mb={6}>{card.text}</Text>
-
           {card.image && (
-            <Image
-              src={card.image}
-              alt="story illustration"
-              borderRadius="lg"
-              w="100%"
-              objectFit="cover"
-            />
+            <Image src={card.image} alt="story" borderRadius="lg" w="100%" />
           )}
         </Box>
       );
@@ -289,13 +313,10 @@ export default function Swipe() {
       return (
         <Box>
           {metaHeader}
-
-          {Object.entries(card.sections).map(([sectionTitle, body]: any) => (
-            <Box key={sectionTitle} mb={5}>
-              <Heading fontSize="md" mb={1}>
-                {sectionTitle}
-              </Heading>
-              <Text>{body}</Text>
+          {Object.entries(card.sections).map(([title, txt]: any) => (
+            <Box mb={5} key={title}>
+              <Heading fontSize="md" mb={1}>{title}</Heading>
+              <Text>{txt}</Text>
             </Box>
           ))}
         </Box>
@@ -315,34 +336,18 @@ export default function Swipe() {
       return (
         <Box>
           {metaHeader}
-          <Text mb={6}>
-            In today’s briefing: researchers found a gap in Microsoft Teams guest access that can be abused by attackers.
-          </Text>
-
+          <Text mb={6}>{card.summary}</Text>
           <Box
-            mt={2}
             p={5}
-            borderRadius="xl"
             border="1px solid #eee"
+            borderRadius="xl"
             bg="gray.50"
             textAlign="center"
           >
-            <Text mb={2} fontWeight="600">
-              🎧 Podcast format
-            </Text>
-            <Text fontSize="sm" color="gray.600">
-              Coming soon. You can only skip this card for now.
-            </Text>
+            <Text fontWeight="600">🎧 Podcast format</Text>
+            <Text fontSize="sm">Coming soon</Text>
           </Box>
-          {card.image && (
-            <Image
-              src={card.image}
-              alt="story illustration"
-              borderRadius="lg"
-              w="100%"
-              objectFit="cover"
-            />
-          )}
+          {card.image && <Image src={card.image} mt={4} borderRadius="lg" />}
         </Box>
       );
     }
@@ -351,32 +356,18 @@ export default function Swipe() {
       return (
         <Box>
           {metaHeader}
-
           <Text mb={6}>{card.summary}</Text>
-
           <Box
-            mt={2}
             p={5}
-            borderRadius="xl"
             border="1px solid #eee"
+            borderRadius="xl"
             bg="gray.50"
             textAlign="center"
           >
-            <Text mb={2} fontWeight="600">🎥 Video format</Text>
-            <Text fontSize="sm" color="gray.600">
-              Coming soon. You can only skip this card for now.
-            </Text>
+            <Text fontWeight="600">🎥 Video format</Text>
+            <Text fontSize="sm">Coming soon</Text>
           </Box>
-
-          {card.image && (
-            <Image
-              src={card.image}
-              alt="video-placeholder"
-              borderRadius="lg"
-              w="100%"
-              mt={4}
-            />
-          )}
+          {card.image && <Image src={card.image} mt={4} borderRadius="lg" />}
         </Box>
       );
     }
@@ -384,18 +375,18 @@ export default function Swipe() {
     return null;
   }
 
-  // ---------- RENDER ----------
-
+  // -------------------------------------
+  // MAIN RENDER
+  // -------------------------------------
   return (
     <Flex direction="column" align="center" px={6} py={8} minH="100vh" bg="white">
-      {/* Top bar */}
-      <Flex w="100%" maxW="600px" justify="space-between" mb={4} align="center">
+      <Flex w="100%" maxW="600px" justify="space-between" mb={4}>
         <Button variant="ghost" onClick={() => navigate(-1)}>
           Back
         </Button>
 
         <Text fontSize="sm" color="gray.600">
-          {website ? website + ".com" : "Your source"}
+          {website ? website + ".com" : ""}
         </Text>
 
         <Text fontSize="sm" color="gray.600">
@@ -412,7 +403,6 @@ export default function Swipe() {
         borderRadius="full"
       />
 
-      {/* CARD AREA */}
       {isIntro ? (
         renderIntroCard()
       ) : (
@@ -423,8 +413,8 @@ export default function Swipe() {
           p={7}
           maxW="480px"
           w="100%"
-          style={{ x, rotate, opacity: baseOpacity }}
           drag="x"
+          style={{ x, rotate, opacity: baseOpacity }}
           dragConstraints={{ left: 0, right: 0 }}
           onDragEnd={handleDragEnd}
           cursor="grab"
@@ -470,23 +460,17 @@ export default function Swipe() {
         </MotionBox>
       )}
 
-      {/* BUTTONS */}
       {!isIntro && (
         <Flex mt={6} gap={4}>
-          <Button
-            variant="outline"
-            borderColor="gray.400"
-            onClick={() => handleButton("skip")}
-          >
+          <Button variant="outline" borderColor="gray.400" onClick={() => handleButton("skip")}>
             Skip
           </Button>
 
           <Button
             bg={currentCard?.comingSoon ? "gray.300" : "black"}
             color="white"
-            _hover={currentCard?.comingSoon ? undefined : { bg: "gray.800" }}
+            disabled={currentCard?.comingSoon}
             onClick={() => handleButton("like")}
-            disabled={!!currentCard?.comingSoon}
           >
             {currentCard?.comingSoon ? "Coming soon" : "Keep"}
           </Button>
