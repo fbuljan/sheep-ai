@@ -56,3 +56,25 @@ Minimal Express API with in-memory auth for quick prototyping.
     }
     ```  
   - Errors: `401` for invalid credentials.
+
+- `POST /chatgpt` — Proxy to OpenAI chat completions.  
+  - Input (JSON body):  
+    ```json
+    {
+      "messages": [
+        { "role": "user", "content": "Say hi to Sheep AI." }
+      ]
+    }
+    ```  
+  - Output: `200` with the generated text and usage details, e.g.:  
+    ```json
+    {
+      "content": "Hello from Sheep AI!",
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 6,
+        "total_tokens": 16
+      }
+    }
+    ```  
+  - Errors: `400` if `messages` is missing/empty, `500` if the OpenAI request fails. Requires `OPENAI_API_KEY` in the environment.
