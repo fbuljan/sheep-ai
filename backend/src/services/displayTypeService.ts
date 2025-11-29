@@ -34,7 +34,7 @@ export class DisplayTypeService {
     await prisma.user.update({
       where: { id: userId },
       data: {
-        preferences: updatedPreferences as Prisma.JsonObject,
+        preferences: updatedPreferences as unknown as Prisma.JsonObject,
       },
     });
   }

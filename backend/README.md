@@ -148,16 +148,16 @@ Minimal Express API with in-memory auth for quick prototyping.
 
 ### ChatGPT & Notification Endpoints
 
-- `POST /chatgpt` — Proxy to OpenAI chat completions.  
-  - Input (JSON body):  
+- `POST /chatgpt` — Proxy to OpenAI chat completions.
+  - Input (JSON body):
     ```json
     {
       "messages": [
         { "role": "user", "content": "Say hi to Sheep AI." }
       ]
     }
-    ```  
-  - Output: `200` with the generated text and usage details, e.g.:  
+    ```
+  - Output: `200` with the generated text and usage details, e.g.:
     ```json
     {
       "content": "Hello from Sheep AI!",
@@ -167,8 +167,30 @@ Minimal Express API with in-memory auth for quick prototyping.
         "total_tokens": 16
       }
     }
-    ```  
+    ```
   - Errors: `400` if `messages` is missing/empty, `500` if the OpenAI request fails. Requires `OPENAI_API_KEY` in the environment.
+
+- `POST /chatgpt/article-summary` — Generate a summary of an article in the specified display type format.
+  - Input (JSON body):
+    ```json
+    {
+      "articleId": 1,
+      "displayTypeId": "micro_summary"
+    }
+    ```
+  - Output: `200` with the generated summary:
+    ```json
+    {
+      "content": "Generated summary text...",
+      "displayType": "Micro Summary",
+      "articleId": 1
+    }
+    ```
+  - Behavior:
+    - Fetches the article from the database and uses OpenAI with web search to read the full article content from the URL.
+    - Generates a summary according to the display type's prompt template.
+    - For non-textual display types (`video_reel_script`, `podcast_snippet`), returns `"COMING SOON!"` as content.
+  - Errors: `400` if `articleId` or `displayTypeId` is missing/invalid, `404` if article not found, `500` if OpenAI request fails.
 
 - `GET /notifications/types` — Get all available notification types.
   - Input: none.

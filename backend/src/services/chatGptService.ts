@@ -1,8 +1,9 @@
 import dotenv from 'dotenv';
 import type OpenAI from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import { promptLibrary } from '../utils/prompts';
+import { promptLibrary, getDisplayTypePrompt } from '../utils/prompts';
 import type { PromptKey } from '../utils/prompts';
+import { DisplayType } from '../models/displayType';
 
 dotenv.config();
 
@@ -51,6 +52,32 @@ export class ChatGptService {
     return {
       content: firstChoice?.message?.content ?? '',
       usage: response.usage,
+      raw: response,
+    };
+  }
+
+  async generateArticleSummary(articleUrl: string, displayType: DisplayType) {
+    const client = await this.getClient();
+    const systemPrompt = getDisplayTypePrompt(displayType);
+
+    const response = await client.responses.create({
+      model: this.model,
+      tools: [{ type: 'web_search_preview' }],
+      instructions: systemPrompt,
+      input: `Please fetch and read the full article content from this URL: ${articleUrl}\n\nThen summarize it according to the instructions. Your output should be summary formatted with markdown.`,
+    });
+
+    const textOutput = response.output.find((item) => item.type === 'message');
+    const content =
+      textOutput?.type === 'message'
+        ? textOutput.content
+            .filter((c): c is OpenAI.Responses.ResponseOutputText => c.type === 'output_text')
+            .map((c) => c.text)
+            .join('')
+        : '';
+
+    return {
+      content,
       raw: response,
     };
   }
