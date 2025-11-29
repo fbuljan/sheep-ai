@@ -102,12 +102,18 @@ export default function CategorySelect() {
       localPrefs[website] = { categories: selected };
       localStorage.setItem("websitePreferences", JSON.stringify(localPrefs));
 
-      // BACKEND UPDATE (backend requires an array of websites, not object)
-      const websiteArray = Object.keys(localPrefs); 
-
+      // BACKEND UPDATE - save preferred websites
+      const websiteArray = Object.keys(localPrefs);
       await axios.put(
         `${API_URL}/users/${userId}/preferred-websites`,
         { preferredWebsites: websiteArray },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // BACKEND UPDATE - save categories for this source
+      await axios.put(
+        `${API_URL}/users/${userId}/categories/${encodeURIComponent(website)}`,
+        { categories: selected },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
