@@ -1,6 +1,6 @@
 ## Sheep AI Backend
 
-Minimal Express API with in-memory auth for quick prototyping.
+Minimal Express API
 
 ## Endpoints
 
